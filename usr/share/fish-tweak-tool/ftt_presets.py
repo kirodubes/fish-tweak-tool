@@ -1,8 +1,8 @@
 """Presets for fish-tweak-tool (M4) — one-click shell looks.
 
-A preset bundles a prompt, plugins, theme and greeting/cursor into a single
-named recipe. Applying one snapshots the config, writes the greeting/cursor into
-the managed block, then runs ONE visible command that installs the plugins,
+A preset bundles a prompt, plugins, theme and greeting into a single named
+recipe. Applying one snapshots the config, writes the greeting into the managed
+block, then runs ONE visible command that installs the plugins,
 sets the prompt (removing any other framework first) and applies the theme.
 """
 
@@ -24,7 +24,6 @@ PRESETS = [
         "variant": "dark",
         "plugins": ["PatrickF1/fzf.fish", "jorgebucaran/autopair.fish", "meaningful-ooo/sponge"],
         "greeting": {"mode": "fastfetch", "text": ""},
-        "cursor": "block",
     },
     {
         "name": "Minimal",
@@ -34,7 +33,6 @@ PRESETS = [
         "variant": "dark",
         "plugins": ["jorgebucaran/autopair.fish"],
         "greeting": {"mode": "off", "text": ""},
-        "cursor": "line",
     },
     {
         "name": "Full",
@@ -49,7 +47,6 @@ PRESETS = [
             "nickeb96/puffer-fish",
         ],
         "greeting": {"mode": "fastfetch", "text": ""},
-        "cursor": "block",
     },
 ]
 
@@ -90,7 +87,7 @@ def apply_preset_async(preset, frameworks, on_done):
     def worker():
         backup = ftt_fisher.ensure_snapshot()
         ftt_managed.write_block(
-            {"greeting": preset.get("greeting", {"mode": "keep"}), "cursor": preset.get("cursor")}
+            {"greeting": preset.get("greeting", {"mode": "keep"})}
         )
         ok, message = ftt_fisher.run_visibly(_build_command(preset, frameworks))
         on_done(ftt_fisher.Result(ok, message, backup))

@@ -29,8 +29,8 @@ usr/share/fish-tweak-tool/
 ├── ftt_fisher.py        # M1 orchestration: fisher install/remove + snapshot
 ├── ftt_prompt.py        # M1 prompt selection: one set_prompt_async (default/built-in/framework)
 ├── ftt_theme.py         # M2 theme gallery: list/parse .theme + theme save
-├── ftt_managed.py       # M3 managed block: greeting + cursor in config.fish
-├── ftt_config.py        # App preferences (window size, current_theme, greeting, cursor)
+├── ftt_managed.py       # M3 managed block: greeting in config.fish
+├── ftt_config.py        # App preferences (window size, current_theme, greeting)
 ├── log.py               # Logging: log_section / log_info / log_success / ...
 └── ftt.css              # GTK4 stylesheet
 ```
@@ -80,8 +80,9 @@ wrong silently clobbers user settings:
   (fish has a single prompt slot). Starship deferred to presets.
 - **M2** — Theme gallery from `fish_config theme`. **Done** (card gallery,
   swatches, apply, current indicator, reset).
-- **M3** — Greeting / cursor knobs + backup-restore of `~/.config/fish/`.
-  **Done** (managed-block greeting + cursor, backup/restore panel).
+- **M3** — Greeting + backup-restore of `~/.config/fish/`. **Done**
+  (managed-block greeting, backup/restore panel). Cursor shape was dropped — it's
+  the terminal's job (Alacritty), and fish only honours `fish_cursor_*` in vi mode.
 - **M4** — Presets (one-click bundles). **Done** — Presets tab (Kiro / Minimal /
   Full); `ftt_presets.apply_preset_async` runs the whole bundle in one visible
   command. Starship + per-prompt config (M6) and ASCII-art greeting (M7) are open.

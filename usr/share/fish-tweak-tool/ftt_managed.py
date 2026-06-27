@@ -1,6 +1,6 @@
 """Managed-block writer for ~/.config/fish/config.fish.
 
-FTT's per-user overrides (greeting, cursor) live in a marked block appended to
+FTT's per-user overrides (the greeting) live in a marked block appended to
 config.fish — below any `source` line, so they load last and always win (the
 load-order rule). The block is fully regenerated from a settings dict each time;
 prefs.json is the source of truth for the UI, this is the source of truth for fish.
@@ -14,8 +14,6 @@ import ftt_fisher
 START = "# >>> fish-tweak-tool managed block >>>"
 END = "# <<< fish-tweak-tool managed block <<<"
 CONFIG = os.path.expanduser("~/.config/fish/config.fish")
-
-_CURSOR_VARS = ("fish_cursor_default", "fish_cursor_insert")
 
 
 def render_block(settings):
@@ -31,11 +29,6 @@ def render_block(settings):
     elif mode == "custom":
         text = greeting.get("text", "").replace("\\", "\\\\").replace("'", "\\'")
         lines.append(f"function fish_greeting; echo '{text}'; end")
-
-    cursor = settings.get("cursor")
-    if cursor:
-        for var in _CURSOR_VARS:
-            lines.append(f"set -g {var} {cursor}")
 
     lines.append(END)
     return "\n".join(lines)

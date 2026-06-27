@@ -6,6 +6,13 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
 
 ### What Changed
 
+- **Removed the Cursor-shape setting** from the Settings tab. Cursor shape is the
+  terminal's job (Alacritty's `cursor.style`), not the shell's: fish only honours
+  `fish_cursor_*` in **vi mode**, so in the default key bindings the setting did
+  nothing (the cursor stayed whatever the terminal was). Dropped the dropdown, the
+  `set -g fish_cursor_*` managed-block lines, and `cursor` from the presets. For
+  cursor shape, use alacritty-tweak-tool / your terminal config.
+
 - **Header bar with version · ♥ Support · Quit** (matches fastfetch-tweak-tool).
   Moved the title into a content header above the tabs: "Fish Tweak Tool" on the
   left, then a `fish v<version>` label, a pink **♥ Support** button (opens a

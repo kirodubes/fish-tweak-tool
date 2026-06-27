@@ -21,9 +21,6 @@ import ftt_prompt  # noqa: E402
 import ftt_theme  # noqa: E402
 import log  # noqa: E402
 
-# Cursor shapes offered in the Settings tab.
-_CURSOR_SHAPES = ["block", "line", "underscore"]
-
 # Light/dark variant for colour-theme-aware themes (Themes tab).
 _VARIANTS = ["dark", "light"]
 
@@ -700,14 +697,13 @@ class ThemesTab(_StatusMixin):
 
 
 class SettingsTab(_StatusMixin):
-    """Settings tab — greeting, cursor shape, and backup / restore (M3)."""
+    """Settings tab — greeting and backup / restore (M3)."""
 
     def __init__(self):
         self._prefs = ftt_config.load_prefs()
         self._busy = False
         self._status = None
         self._custom_entry = None
-        self._cursor_dropdown = None
         self._backup_dropdown = None
         self._greeting_radios = {}
         self.widget = self._build()
@@ -719,8 +715,6 @@ class SettingsTab(_StatusMixin):
 
         box.append(_section("Greeting"))
         box.append(self._build_greeting())
-        box.append(_section("Cursor"))
-        box.append(self._build_cursor())
 
         apply_btn = Gtk.Button(label="Apply settings")
         apply_btn.add_css_class("suggested-action")
@@ -767,16 +761,6 @@ class SettingsTab(_StatusMixin):
         box.append(self._custom_entry)
         return box
 
-    def _build_cursor(self):
-        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        row.append(_intro("Shape:"))
-        self._cursor_dropdown = Gtk.DropDown.new_from_strings(_CURSOR_SHAPES)
-        saved = self._prefs.get("cursor")
-        if saved in _CURSOR_SHAPES:
-            self._cursor_dropdown.set_selected(_CURSOR_SHAPES.index(saved))
-        row.append(self._cursor_dropdown)
-        return row
-
     def _build_backup(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
 
@@ -802,11 +786,7 @@ class SettingsTab(_StatusMixin):
     # ── actions ───────────────────────────────────────────────────────────
     def _collect_settings(self):
         mode = next((k for k, r in self._greeting_radios.items() if r.get_active()), "keep")
-        cursor = _CURSOR_SHAPES[self._cursor_dropdown.get_selected()]
-        return {
-            "greeting": {"mode": mode, "text": self._custom_entry.get_text()},
-            "cursor": cursor,
-        }
+        return {"greeting": {"mode": mode, "text": self._custom_entry.get_text()}}
 
     def _apply_settings(self, _btn):
         if self._busy:
@@ -824,7 +804,6 @@ class SettingsTab(_StatusMixin):
         self._busy = False
         if result.ok:
             self._prefs["greeting"] = settings["greeting"]
-            self._prefs["cursor"] = settings["cursor"]
             ftt_config.save_prefs(self._prefs)
             self._refresh_backups()
             self._set_status("Settings applied. Open a new shell to see them.")
