@@ -60,6 +60,24 @@ def ensure_snapshot():
     return path
 
 
+def snapshot_now():
+    """Force a backup of ~/.config/fish regardless of the once-per-process guard."""
+    return _snapshot_fish_config()
+
+
+def list_backups():
+    """Return existing backup directories, newest first."""
+    if not os.path.isdir(BACKUP_DIR):
+        return []
+    paths = [os.path.join(BACKUP_DIR, name) for name in os.listdir(BACKUP_DIR)]
+    return sorted((p for p in paths if os.path.isdir(p)), reverse=True)
+
+
+def restore_backup(path):
+    """Copy a backup directory back over ~/.config/fish."""
+    shutil.copytree(path, FISH_CONFIG_DIR, dirs_exist_ok=True)
+
+
 def _snapshot_fish_config():
     if not os.path.isdir(FISH_CONFIG_DIR):
         return None

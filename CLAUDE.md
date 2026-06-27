@@ -24,10 +24,11 @@ sudo) and ships in `nemesis_repo`. ATT's Shells → Fish tab will deep-link to i
 ```
 usr/share/fish-tweak-tool/
 ├── fish-tweak-tool.py   # Entry point: Gtk.Application + Main window
-├── ftt_gui.py           # GUI: four-tab Notebook; Plugins + Prompt tabs live (M1)
+├── ftt_gui.py           # GUI: four-tab Notebook; Plugins + Prompt + Themes live
 ├── ftt_fisher.py        # M1 orchestration: fisher install/remove + snapshot
 ├── ftt_prompt.py        # M1 built-in prompts: fish_config prompt save
-├── ftt_config.py        # App preferences (window size); NOT the fish config
+├── ftt_theme.py         # M2 theme gallery: list/parse .theme + theme save
+├── ftt_config.py        # App preferences (window size, current_theme)
 ├── log.py               # Logging: log_section / log_info / log_success / ...
 └── ftt.css              # GTK4 stylesheet
 ```
@@ -74,7 +75,8 @@ wrong silently clobbers user settings:
 - **M1** — Prompt & plugin orchestration via `fisher` (the reason-to-exist).
   Plugins tab **done**; Prompt tab **done** (Tide/Hydro/Pure + built-ins).
   Starship deferred to presets (needs the managed-block writer).
-- **M2** — Theme gallery from `fish_config theme`.
+- **M2** — Theme gallery from `fish_config theme`. **Done** (card gallery,
+  swatches, apply, current indicator, reset).
 - **M3** — Greeting / cursor knobs + backup-restore of `~/.config/fish/`.
 - **M4** — Presets (one-click Kiro-default / Minimal / Tide bundles).
 - **M5** — nemesis_repo package + ATT deep-link.
@@ -113,6 +115,19 @@ attempt → report), per-user, and must never block the UI thread.
 ### Markup
 
 Ampersands in `set_markup()` must be escaped as `&amp;` or the label renders empty.
+
+### fish_config save is interactive
+
+`fish_config prompt save` and `fish_config theme save` both gate on an
+interactive `read "Overwrite? [y/N]"`. Run non-interactively via `fish -c` they
+get EOF and abort with "Not overwriting". Always pipe `y`:
+`echo y | fish_config theme save <name>`.
+
+### Verifying the GUI
+
+Render-test with a throwaway `NON_UNIQUE` app id, never the real
+`com.kiro.fish-tweak-tool` (single-instance: a remote launch won't activate).
+**Never `pkill` to clear leftovers — it kills the user's own running instance.**
 
 ### Dev Mode
 

@@ -19,6 +19,10 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   built-in prompt styles (`fish_config prompt save`). **Starship is deferred** —
   enabling it needs a managed-block line in `config.fish`, which arrives with
   presets (M4); the tab flags this.
+- **M2 (theme gallery).** The Themes tab is now live: a card gallery of fish's
+  25 bundled colour themes, each with a parsed swatch (background + foreground
+  bars), click-to-apply (`fish_config theme save`), a current-theme indicator,
+  and a **Reset to default** button.
 
 ### Technical Details
 
@@ -56,6 +60,14 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   base class shared by the Plugins and Prompt tabs; Tide's install spec
   (`IlanCosman/tide@v6`) differs from its fisher-list key (`ilancosman/tide`),
   handled via a per-tab `_install_spec` override.
+- **M2 internals:** new `ftt_theme.py` lists themes, locates each `.theme` file
+  (`/usr/share/fish/themes/`, user dir wins), and parses `# preferred_background`
+  + `fish_color_*` hex values for the swatch. `theme save` is interactive too, so
+  the apply pipes `y`: `echo y | fish_config theme save <name>`. fish doesn't
+  track the active theme by name, so FTT records the last theme it applied in
+  `prefs.json` (`current_theme`) and marks that card. Swatches are Cairo
+  `DrawingArea`s. **Test note:** render verification uses a throwaway
+  `NON_UNIQUE` app id — never `pkill` the user's running instance.
 
 ### Files Modified
 
@@ -66,6 +78,7 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
 - `usr/share/fish-tweak-tool/ftt_gui.py` (new; Plugins + Prompt tabs for M1)
 - `usr/share/fish-tweak-tool/ftt_fisher.py` (new; M1 orchestration core)
 - `usr/share/fish-tweak-tool/ftt_prompt.py` (new; built-in prompt wrapper)
+- `usr/share/fish-tweak-tool/ftt_theme.py` (new; M2 theme gallery backend)
 - `usr/share/fish-tweak-tool/ftt_config.py` (new)
 - `usr/share/fish-tweak-tool/log.py` (new)
 - `usr/share/fish-tweak-tool/ftt.css` (new; plugin row + status styles)

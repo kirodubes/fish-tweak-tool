@@ -12,13 +12,14 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import GLib, Gtk  # noqa: E402
 
+import ftt_config  # noqa: E402
 import ftt_fisher  # noqa: E402
 import ftt_prompt  # noqa: E402
+import ftt_theme  # noqa: E402
 import log  # noqa: E402
 
 # Placeholder tabs not yet built: title → one-line description.
 _PLACEHOLDERS = [
-    ("Themes", "Browse and apply colour themes from fish_config theme."),
     ("Settings", "Greeting, cursor shape, and backup / restore of your fish config."),
 ]
 
@@ -355,6 +356,145 @@ class PromptTab(_FisherTab):
         return False
 
 
+# ── Themes tab ───────────────────────────────────────────────────────────────
+
+
+def _rgb(hex_color):
+    """Convert '#rrggbb' (or '#rgb') to a (r, g, b) float tuple in 0..1."""
+    h = hex_color.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    return tuple(int(h[i : i + 2], 16) / 255 for i in (0, 2, 4))
+
+
+def _swatch(background, foregrounds, width=190, height=72):
+    """Return a DrawingArea previewing a theme: background fill + foreground bars."""
+    area = Gtk.DrawingArea()
+    area.set_size_request(width, height)
+
+    def draw(_area, cr, w, h, _data=None):
+        bg = _rgb(background) if background else (0.12, 0.12, 0.12)
+        cr.set_source_rgb(*bg)
+        cr.rectangle(0, 0, w, h)
+        cr.fill()
+        if foregrounds:
+            pad = 12
+            count = len(foregrounds)
+            bar_w = (w - 2 * pad) / count
+            for i, color in enumerate(foregrounds):
+                cr.set_source_rgb(*_rgb(color))
+                cr.rectangle(pad + i * bar_w + 2, h * 0.45, bar_w - 4, h * 0.35)
+                cr.fill()
+
+    area.set_draw_func(draw)
+    return area
+
+
+class ThemesTab:
+    """Themes tab — gallery of fish_config colour themes with apply (M2)."""
+
+    def __init__(self):
+        self._prefs = ftt_config.load_prefs()
+        self._current = self._prefs.get("current_theme")
+        self._cards = {}
+        self._status = None
+        self._busy = False
+        self.widget = self._build()
+
+    def _build(self):
+        themes = ftt_theme.list_themes()
+        if not themes:
+            return _notice("No themes found", "fish_config theme list returned nothing.")
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        for side in ("top", "bottom", "start", "end"):
+            getattr(box, f"set_margin_{side}")(16)
+
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        header.append(_intro("Click a theme to apply it. Open a new shell to see the colours."))
+        spacer = Gtk.Box()
+        spacer.set_hexpand(True)
+        header.append(spacer)
+        reset = Gtk.Button(label="Reset to default")
+        reset.connect("clicked", lambda _b: self._apply("default"))
+        header.append(reset)
+        box.append(header)
+
+        flow = Gtk.FlowBox()
+        flow.set_selection_mode(Gtk.SelectionMode.NONE)
+        flow.set_max_children_per_line(4)
+        flow.set_column_spacing(10)
+        flow.set_row_spacing(10)
+        flow.set_homogeneous(True)
+        for name in themes:
+            card = self._make_card(name)
+            self._cards[name] = card
+            flow.append(card)
+        box.append(flow)
+
+        self._status = Gtk.Label(label="", xalign=0)
+        self._status.add_css_class("status-line")
+        self._status.set_wrap(True)
+        box.append(self._status)
+
+        scroller = Gtk.ScrolledWindow()
+        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroller.set_vexpand(True)
+        scroller.set_child(box)
+        return scroller
+
+    def _make_card(self, name):
+        background, foregrounds = ftt_theme.parse_theme(name)
+        button = Gtk.Button()
+        button.add_css_class("theme-card")
+        if name == self._current:
+            button.add_css_class("theme-current")
+
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        content.append(_swatch(background, foregrounds))
+        label = Gtk.Label(label=name)
+        label.add_css_class("plugin-name")
+        label.set_ellipsize(3)  # Pango.EllipsizeMode.END
+        content.append(label)
+        button.set_child(content)
+        button.connect("clicked", lambda _b, n=name: self._apply(n))
+        return button
+
+    def _apply(self, name):
+        if self._busy:
+            return
+        self._busy = True
+        self._set_status(f"Applying {name}…")
+
+        def on_done(result):
+            GLib.idle_add(self._apply_finished, name, result)
+
+        ftt_theme.apply_async(name, on_done, snapshot=True)
+
+    def _apply_finished(self, name, result):
+        self._busy = False
+        if result.ok:
+            if self._current in self._cards:
+                self._cards[self._current].remove_css_class("theme-current")
+            if name in self._cards:
+                self._cards[name].add_css_class("theme-current")
+            self._current = name
+            self._prefs["current_theme"] = name
+            ftt_config.save_prefs(self._prefs)
+            self._set_status(f"Theme '{name}' applied. Open a new shell to see it.")
+        else:
+            detail = result.message or "see terminal for details"
+            self._set_status(f"Could not apply {name}: {detail}", error=True)
+        return False
+
+    def _set_status(self, text, error=False):
+        self._status.set_text(text)
+        if error:
+            self._status.add_css_class("status-error")
+        else:
+            self._status.remove_css_class("status-error")
+
+
 # ── Entry point ──────────────────────────────────────────────────────────────
 
 
@@ -365,6 +505,7 @@ def build(window, fish_version):
 
     notebook.append_page(PluginsTab().widget, Gtk.Label(label="Plugins"))
     notebook.append_page(PromptTab().widget, Gtk.Label(label="Prompt"))
+    notebook.append_page(ThemesTab().widget, Gtk.Label(label="Themes"))
     for title, description in _PLACEHOLDERS:
         notebook.append_page(_placeholder(title, description), Gtk.Label(label=title))
 

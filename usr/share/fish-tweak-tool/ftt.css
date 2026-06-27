@@ -58,3 +58,21 @@ label#title {
     font-size: 11px;
     font-style: italic;
 }
+
+.theme-card {
+    padding: 6px;
+    border-radius: 8px;
+}
+
+.theme-card .plugin-name {
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.theme-current {
+    border: 2px solid @accent_bg_color;
+}
+
+.theme-current .plugin-name {
+    font-weight: 700;
+}
