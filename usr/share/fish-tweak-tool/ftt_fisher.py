@@ -108,7 +108,7 @@ def run_async(command, on_done, snapshot=False):
     def worker():
         backup = ensure_snapshot() if snapshot else None
         resolved = command() if callable(command) else command
-        ok, message = _run_visibly(resolved)
+        ok, message = run_visibly(resolved)
         on_done(Result(ok, message, backup))
 
     threading.Thread(target=worker, daemon=True).start()
@@ -148,7 +148,7 @@ def _terminal_script(command, status_path):
     )
 
 
-def _run_visibly(command):
+def run_visibly(command):
     """Run a mutating command in a visible terminal; return (ok, message).
 
     Falls back to a silent in-process run only when no terminal is available.

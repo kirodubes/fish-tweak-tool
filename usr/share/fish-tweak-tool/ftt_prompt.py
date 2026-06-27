@@ -11,7 +11,7 @@ import ftt_fisher
 # A prompt framework wants to own these files, but a built-in prompt (or a
 # previous framework) may already have written them. Clearing them first makes
 # switching prompts always work.
-_PROMPT_FUNCTION_FILES = [
+PROMPT_FUNCTION_FILES = [
     "~/.config/fish/functions/fish_prompt.fish",
     "~/.config/fish/functions/fish_right_prompt.fish",
     "~/.config/fish/functions/fish_mode_prompt.fish",
@@ -38,7 +38,7 @@ def set_prompt_async(choice, frameworks, on_done, snapshot=True):
     removed first so only the chosen prompt remains. The whole thing runs as one
     visible command, and the final command's status is the reported result.
     """
-    files = " ".join(_PROMPT_FUNCTION_FILES)
+    files = " ".join(PROMPT_FUNCTION_FILES)
 
     framework_bases = {key.lower() for key, _ in frameworks}
 

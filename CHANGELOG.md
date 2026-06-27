@@ -6,6 +6,26 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
 
 ### What Changed
 
+- **M5 — Package + ATT integration.** Added `alacritty` as an optdepend on the
+  package (`alacritty: shows the exact command for each change in a terminal`),
+  since the visible-command UX runs in Alacritty (graceful fallback otherwise).
+  Implemented the **ATT deep-link**: ArchLinux Tweak Tool's Shells → Fish section
+  now has a "Fish Tweak Tool" subsection (install / remove / **Launch** + status),
+  mirroring its alacritty-tweak-tool integration. Launch runs `fish-tweak-tool`
+  as the real user (ATT runs as root). Edits live in the ATT repo
+  (`shell.py`, `shell_gui.py`) — **archlinux-tweak-tool-gtk4 must be rebuilt** too.
+
+- **M4 — Presets (one-click shell looks).** New **Presets** tab (now the first
+  tab) with three bundles — **Kiro** (Tide · Nord · fzf+autopair+sponge ·
+  fastfetch), **Minimal** (Pure · default theme · autopair · no greeting), **Full**
+  (Tide · Dracula · all four plugins · fastfetch). Applying one (after a confirm)
+  snapshots the config, writes greeting+cursor into the managed block, then runs
+  ONE visible command that installs the plugins, sets the prompt (removing any
+  other framework first) and applies the theme. New `ftt_presets.py`
+  (`PRESETS` + `apply_preset_async`); `ftt_fisher._run_visibly` made public as
+  `run_visibly`; `ftt_prompt`'s prompt-file list made public. Preset contents are
+  plain data — easy to tune.
+
 - **Prompt tab redesigned as a mutually-exclusive radio group.** fish has a
   single prompt slot, so the Prompt tab is now one "choose your prompt" group:
   **Default** (fish's built-in), the three **frameworks** (Tide/Hydro/Pure), and

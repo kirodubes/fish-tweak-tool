@@ -16,6 +16,7 @@ from gi.repository import GLib, Gtk  # noqa: E402
 import ftt_config  # noqa: E402
 import ftt_fisher  # noqa: E402
 import ftt_managed  # noqa: E402
+import ftt_presets  # noqa: E402
 import ftt_prompt  # noqa: E402
 import ftt_theme  # noqa: E402
 import log  # noqa: E402
@@ -868,6 +869,113 @@ class SettingsTab(_StatusMixin):
         self._backup_dropdown.set_model(Gtk.StringList.new(names))
 
 
+# ── Presets tab ──────────────────────────────────────────────────────────────
+
+
+class PresetsTab(_StatusMixin):
+    """Presets tab — one-click shell looks that bundle prompt + plugins + theme (M4)."""
+
+    def __init__(self):
+        self._status = None
+        self._status_timeout = 0
+        self._apply_btns = []
+        self.widget = self._build()
+
+    def _build(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        for side in ("top", "bottom", "start", "end"):
+            getattr(box, f"set_margin_{side}")(16)
+
+        box.append(_section("Presets"))
+        box.append(
+            _intro(
+                "One click sets a whole look — prompt, plugins, theme and greeting "
+                "together. Your fish config is backed up first."
+            )
+        )
+
+        listbox = Gtk.ListBox()
+        listbox.set_selection_mode(Gtk.SelectionMode.NONE)
+        listbox.add_css_class("plugin-list")
+        for preset in ftt_presets.PRESETS:
+            listbox.append(self._make_row(preset))
+        box.append(listbox)
+
+        box.append(self._init_status())
+
+        scroller = Gtk.ScrolledWindow()
+        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroller.set_vexpand(True)
+        scroller.set_child(box)
+        return scroller
+
+    def _make_row(self, preset):
+        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        for side in ("top", "bottom", "start", "end"):
+            getattr(row, f"set_margin_{side}")(6)
+
+        text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        text.set_hexpand(True)
+        name = Gtk.Label(label=preset["name"], xalign=0)
+        name.add_css_class("plugin-name")
+        summary = Gtk.Label(label=preset["summary"], xalign=0)
+        summary.add_css_class("plugin-desc")
+        summary.set_wrap(True)
+        text.append(name)
+        text.append(summary)
+
+        button = Gtk.Button(label="Apply")
+        button.set_valign(Gtk.Align.CENTER)
+        button.connect("clicked", lambda _b, p=preset: self._apply(p))
+        self._apply_btns.append(button)
+
+        row.append(text)
+        row.append(button)
+        return row
+
+    def _apply(self, preset):
+        dialog = Gtk.AlertDialog()
+        dialog.set_modal(True)
+        dialog.set_message(f"Apply the {preset['name']} preset?")
+        dialog.set_detail(
+            f"{preset['summary']}.\n\nThis installs plugins and sets your prompt, theme "
+            "and greeting — your fish config is backed up first."
+        )
+        dialog.set_buttons(["Cancel", "Apply"])
+        dialog.set_cancel_button(0)
+        dialog.set_default_button(1)
+        dialog.choose(self.widget.get_root(), None, lambda dlg, res: self._confirm(dlg, res, preset))
+
+    def _confirm(self, dialog, result, preset):
+        try:
+            chosen = dialog.choose_finish(result)
+        except GLib.Error:
+            chosen = 0
+        if chosen != 1:
+            return
+        self._set_buttons(False)
+        self._set_status(f"Applying the {preset['name']} preset…")
+        frameworks = [(key, spec) for key, spec, _ in _PROMPT_FRAMEWORKS]
+
+        def on_done(res):
+            GLib.idle_add(self._applied, preset, res)
+
+        ftt_presets.apply_preset_async(preset, frameworks, on_done)
+
+    def _applied(self, preset, result):
+        self._set_buttons(True)
+        if result.ok:
+            self._set_status(f"{preset['name']} preset applied. Open a new shell to see it.")
+        else:
+            detail = result.message or "see terminal for details"
+            self._set_status(f"{preset['name']} preset failed: {detail}", error=True)
+        return False
+
+    def _set_buttons(self, sensitive):
+        for button in self._apply_btns:
+            button.set_sensitive(sensitive)
+
+
 # ── Entry point ──────────────────────────────────────────────────────────────
 
 
@@ -876,6 +984,7 @@ def build(window, fish_version):
     notebook = Gtk.Notebook()
     notebook.set_scrollable(True)
 
+    notebook.append_page(PresetsTab().widget, Gtk.Label(label="Presets"))
     notebook.append_page(PluginsTab().widget, Gtk.Label(label="Plugins"))
     notebook.append_page(PromptTab().widget, Gtk.Label(label="Prompt"))
     notebook.append_page(ThemesTab().widget, Gtk.Label(label="Themes"))

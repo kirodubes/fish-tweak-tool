@@ -24,7 +24,8 @@ sudo) and ships in `nemesis_repo`. ATT's Shells → Fish tab will deep-link to i
 ```
 usr/share/fish-tweak-tool/
 ├── fish-tweak-tool.py   # Entry point: Gtk.Application + Main window
-├── ftt_gui.py           # GUI: four-tab Notebook; Plugins + Prompt + Themes live
+├── ftt_gui.py           # GUI: five-tab Notebook (Presets · Plugins · Prompt · Themes · Settings)
+├── ftt_presets.py       # M4 presets: one-click bundles (prompt + plugins + theme + greeting)
 ├── ftt_fisher.py        # M1 orchestration: fisher install/remove + snapshot
 ├── ftt_prompt.py        # M1 prompt selection: one set_prompt_async (default/built-in/framework)
 ├── ftt_theme.py         # M2 theme gallery: list/parse .theme + theme save
@@ -81,8 +82,12 @@ wrong silently clobbers user settings:
   swatches, apply, current indicator, reset).
 - **M3** — Greeting / cursor knobs + backup-restore of `~/.config/fish/`.
   **Done** (managed-block greeting + cursor, backup/restore panel).
-- **M4** — Presets (one-click Kiro-default / Minimal / Tide bundles).
-- **M5** — nemesis_repo package + ATT deep-link.
+- **M4** — Presets (one-click bundles). **Done** — Presets tab (Kiro / Minimal /
+  Full); `ftt_presets.apply_preset_async` runs the whole bundle in one visible
+  command. Starship + per-prompt config (M6) and ASCII-art greeting (M7) are open.
+- **M5** — nemesis_repo package + ATT deep-link. **Done** — package recipe live
+  (alacritty optdepend); ATT Shells → Fish has a Fish-Tweak-Tool subsection
+  (install / remove / launch). Both packages need rebuilding.
 
 Open design decisions still to settle before M1: D8 (preset apply semantics),
 D9 (snapshot-before-apply timing), D10 (orchestration failure / offline /
