@@ -1,0 +1,19 @@
+label#title {
+    font-weight: 600;
+}
+
+.placeholder-title {
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.placeholder-detail {
+    color: alpha(currentColor, 0.65);
+    font-size: 13px;
+}
+
+.placeholder-badge {
+    color: alpha(currentColor, 0.5);
+    font-size: 11px;
+    font-style: italic;
+}

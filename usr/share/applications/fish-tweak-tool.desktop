@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Fish Tweak Tool
+GenericName=Fish Shell Configuration Tool
+Comment=Configure the fish shell — prompt, plugins, themes, and greeting
+Exec=/usr/bin/fish-tweak-tool
+Icon=fish
+Terminal=false
+Type=Application
+Categories=GTK;Settings;Utility;X-XFCE-SettingsDialog;X-XFCE-SystemSettings;
+Keywords=fish;shell;prompt;theme;plugin;fisher;tide;tweak
+StartupNotify=true
