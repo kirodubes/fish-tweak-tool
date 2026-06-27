@@ -43,6 +43,33 @@ _PROMPT_FRAMEWORKS = [
     ("pure-fish/pure", "pure-fish/pure", "Minimal clean prompt; directory + git branch"),
 ]
 
+# Per-framework detail + first steps, shown in the info panel when a row is selected.
+_FRAMEWORK_INFO = {
+    "IlanCosman/tide": (
+        "<b>Tide</b> — the most configurable modern fish prompt. Async, so it "
+        "renders instantly and fills in git status in the background.\n\n"
+        "<b>First steps:</b> after installing, run <tt>tide configure</tt> in a "
+        "terminal to launch the interactive wizard (style, icons, colours). "
+        "Re-run it any time to change the look."
+    ),
+    "jorgebucaran/hydro": (
+        "<b>Hydro</b> — an ultra-minimal async prompt; the fastest of the bunch. "
+        "Shows the directory, git branch/status and command duration.\n\n"
+        "<b>First steps:</b> zero config needed. Tweak it by setting variables in "
+        "your config, e.g. <tt>set hydro_symbol_prompt ❯</tt> or the "
+        "<tt>hydro_color_*</tt> colours."
+    ),
+    "pure-fish/pure": (
+        "<b>Pure</b> — a clean, minimal prompt ported from zsh Pure. Shows the "
+        "directory and git branch; the <tt>❯</tt> symbol turns red when the last "
+        "command failed.\n\n"
+        "<b>First steps:</b> works out of the box. Customise via <tt>pure_*</tt> "
+        "variables, e.g. <tt>set pure_symbol_prompt ❯</tt>."
+    ),
+}
+
+_FRAMEWORK_INFO_DEFAULT = "Select a prompt framework above to see details and first steps."
+
 
 # ── Generic helpers ──────────────────────────────────────────────────────────
 
@@ -272,10 +299,67 @@ class PromptTab(_FisherTab):
         self._specs = {}
         self._dropdown = None
         self._apply_btn = None
+        self._framework_order = []
+        self._info_label = None
         self.widget = self._build()
 
     def _install_spec(self, key):
         return self._specs.get(key, key)
+
+    def _on_toggle(self, row, want_on):
+        # Removing is conflict-free; installing replaces the one prompt slot, so confirm.
+        if not want_on:
+            super()._on_toggle(row, want_on)
+            return
+
+        dialog = Gtk.AlertDialog()
+        dialog.set_modal(True)
+        dialog.set_message(f"Set your prompt to {row.plugin}?")
+        dialog.set_detail(
+            "A prompt framework replaces your current fish prompt. Your fish "
+            "config is backed up first — restore it from Settings → Backup & restore."
+        )
+        dialog.set_buttons(["Cancel", "Replace"])
+        dialog.set_cancel_button(0)
+        dialog.set_default_button(1)
+        dialog.choose(self.widget.get_root(), None, lambda dlg, res: self._confirm_install(dlg, res, row))
+
+    def _confirm_install(self, dialog, result, row):
+        try:
+            chosen = dialog.choose_finish(result)
+        except GLib.Error:
+            chosen = 0
+        if chosen != 1:
+            row.set_installed(False)  # revert the switch the user flipped on
+            return
+        row.set_loading(True)
+        self._set_status("")
+
+        def on_done(result):
+            GLib.idle_add(self._framework_installed, row, result)
+
+        ftt_prompt.install_framework_async(self._install_spec(row.plugin), on_done, snapshot=True)
+
+    def _framework_installed(self, row, result):
+        row.set_loading(False)
+        if result.ok:
+            row.set_installed(True)
+            self._set_status(
+                f"{row.plugin} is now your prompt. Only one prompt framework is active "
+                "at a time — installing another replaces it."
+            )
+        else:
+            row.set_installed(False)
+            detail = result.message or "see terminal for details"
+            self._set_status(f"{row.plugin} failed: {detail}", error=True)
+        return False
+
+    def _on_framework_selected(self, _listbox, listrow):
+        if listrow is None:
+            self._info_label.set_markup(_FRAMEWORK_INFO_DEFAULT)
+            return
+        key = self._framework_order[listrow.get_index()]
+        self._info_label.set_markup(_FRAMEWORK_INFO.get(key, _FRAMEWORK_INFO_DEFAULT))
 
     def _build(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -289,17 +373,20 @@ class PromptTab(_FisherTab):
             box.append(
                 _intro(
                     "Installing a framework activates it. Turn it off to remove it "
-                    "and return to your previous prompt."
+                    "and return to your previous prompt. Click one for details below."
                 )
             )
             listbox = Gtk.ListBox()
-            listbox.set_selection_mode(Gtk.SelectionMode.NONE)
+            listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
             listbox.add_css_class("plugin-list")
             for key, spec, description in _PROMPT_FRAMEWORKS:
                 row = _PluginRow(key, description, self._on_toggle)
                 self._rows[key] = row
                 self._specs[key] = spec
+                self._framework_order.append(key)
                 listbox.append(row.widget)
+            listbox.connect("row-selected", self._on_framework_selected)
+            listbox.unselect_all()
             box.append(listbox)
         else:
             box.append(_intro("fisher is not available — install it (sudo pacman -S fisher) to add prompt frameworks."))
@@ -308,9 +395,23 @@ class PromptTab(_FisherTab):
         box.append(_intro("Zero-dependency prompt styles that ship with fish."))
         box.append(self._build_builtin_picker())
 
+        reset_btn = Gtk.Button(label="Reset to default prompt")
+        reset_btn.set_halign(Gtk.Align.START)
+        reset_btn.set_tooltip_text("Remove any framework and custom prompt; back to fish's default")
+        reset_btn.connect("clicked", self._reset_prompt)
+        box.append(reset_btn)
+
         starship_note = _intro("Starship support is coming with presets.")
         starship_note.add_css_class("muted")
         box.append(starship_note)
+
+        box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+        self._info_label = Gtk.Label(xalign=0, yalign=0)
+        self._info_label.add_css_class("info-panel")
+        self._info_label.set_wrap(True)
+        self._info_label.set_vexpand(True)
+        self._info_label.set_markup(_FRAMEWORK_INFO_DEFAULT)
+        box.append(self._info_label)
 
         box.append(self._status)
 
@@ -355,6 +456,25 @@ class PromptTab(_FisherTab):
         else:
             detail = result.message or "see terminal for details"
             self._set_status(f"Could not apply {name}: {detail}", error=True)
+        return False
+
+    def _reset_prompt(self, _btn):
+        installed = [key for key, row in self._rows.items() if row.switch.get_active()]
+        self._set_status("Resetting prompt…")
+
+        def on_done(result):
+            GLib.idle_add(self._reset_finished, result)
+
+        ftt_prompt.reset_default_async(installed, on_done, snapshot=True)
+
+    def _reset_finished(self, result):
+        if result.ok:
+            for row in self._rows.values():
+                row.set_installed(False)
+            self._set_status("Prompt reset to fish's default. Open a new shell to see it.")
+        else:
+            detail = result.message or "see terminal for details"
+            self._set_status(f"Reset failed: {detail}", error=True)
         return False
 
 

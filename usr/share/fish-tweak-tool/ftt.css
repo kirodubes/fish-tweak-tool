@@ -61,6 +61,14 @@ label#title {
     font-style: italic;
 }
 
+.info-panel {
+    font-size: 13px;
+    padding: 10px 12px;
+    border: 1px solid alpha(currentColor, 0.12);
+    border-radius: 8px;
+    background-color: alpha(currentColor, 0.04);
+}
+
 .theme-card {
     padding: 6px;
     border-radius: 8px;

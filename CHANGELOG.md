@@ -6,6 +6,25 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
 
 ### What Changed
 
+- **Prompt-conflict fix.** Installing a framework (Tide/Hydro/Pure) failed when a
+  built-in prompt or previous framework had already written `fish_prompt.fish`
+  (`fisher: Cannot install … remove or move conflicting files first`). fish has
+  one prompt slot, so installing a framework now first confirms ("Set your prompt
+  to X? — replaces your current prompt, backed up first"), then runs a single
+  visible command that clears the conflicting prompt files and installs:
+  `rm -f …/fish_prompt.fish …; and fisher install <spec>`. Removing a framework
+  is unchanged (no conflict).
+- **Reset to default prompt.** New button in the Prompt tab (mirrors the Themes
+  tab's reset) that removes any installed framework and clears the prompt
+  function files, reverting to fish's built-in default — run visibly.
+- **Prompt info panel.** Selecting a framework row now shows a details + first-
+  steps panel below (e.g. Tide → run `tide configure`; Hydro/Pure → the
+  `hydro_*`/`pure_*` variables), filling the previously empty space.
+- **One-prompt-at-a-time notice.** fish has a single prompt slot, so multiple
+  frameworks can be *installed* but only the last-applied is *active*. After a
+  framework install the orange status now says so: "<X> is now your prompt. Only
+  one prompt framework is active at a time — installing another replaces it."
+
 - **No black box — mutating commands run visibly in Alacritty.** Every change to
   the system (fisher install/remove, theme save, prompt save) now opens a
   terminal that prints the exact command before running it and shows live
