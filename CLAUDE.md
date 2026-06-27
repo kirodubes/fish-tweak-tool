@@ -24,11 +24,18 @@ sudo) and ships in `nemesis_repo`. ATT's Shells → Fish tab will deep-link to i
 ```
 usr/share/fish-tweak-tool/
 ├── fish-tweak-tool.py   # Entry point: Gtk.Application + Main window
-├── ftt_gui.py           # GUI: the four-tab Notebook shell
+├── ftt_gui.py           # GUI: four-tab Notebook; Plugins tab live (M1)
+├── ftt_fisher.py        # M1 orchestration: fisher install/remove + snapshot
 ├── ftt_config.py        # App preferences (window size); NOT the fish config
 ├── log.py               # Logging: log_section / log_info / log_success / ...
 └── ftt.css              # GTK4 stylesheet
 ```
+
+`ftt_fisher.py` is deliberately toolkit-free (no GTK import) so it stays unit-
+testable. `fisher` is a fish *function*, so every call shells out via
+`fish -c`. Mutating calls run in a daemon thread and hand back a
+`Result(ok, message, backup)` — they never raise into the UI. `fisher list`
+lowercases plugin names, so install-state matching is case-insensitive.
 
 App modules are prefixed `ftt_` on purpose: `fish_config`, `fish_prompt`, and
 `fish_theme` are real fish commands, so a local module named `fish_config.py`
@@ -64,6 +71,7 @@ wrong silently clobbers user settings:
 
 - **M0** — Scaffold (done): GTK4 skeleton, launcher, desktop entry.
 - **M1** — Prompt & plugin orchestration via `fisher` (the reason-to-exist).
+  Plugins tab **done**; Prompt tab (Tide/Starship/Hydro/Pure + built-ins) next.
 - **M2** — Theme gallery from `fish_config theme`.
 - **M3** — Greeting / cursor knobs + backup-restore of `~/.config/fish/`.
 - **M4** — Presets (one-click Kiro-default / Minimal / Tide bundles).
