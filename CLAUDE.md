@@ -26,7 +26,7 @@ usr/share/fish-tweak-tool/
 ├── fish-tweak-tool.py   # Entry point: Gtk.Application + Main window
 ├── ftt_gui.py           # GUI: four-tab Notebook; Plugins + Prompt + Themes live
 ├── ftt_fisher.py        # M1 orchestration: fisher install/remove + snapshot
-├── ftt_prompt.py        # M1 built-in prompts: fish_config prompt save
+├── ftt_prompt.py        # M1 prompt selection: one set_prompt_async (default/built-in/framework)
 ├── ftt_theme.py         # M2 theme gallery: list/parse .theme + theme save
 ├── ftt_managed.py       # M3 managed block: greeting + cursor in config.fish
 ├── ftt_config.py        # App preferences (window size, current_theme, greeting, cursor)
@@ -74,8 +74,9 @@ wrong silently clobbers user settings:
 
 - **M0** — Scaffold (done): GTK4 skeleton, launcher, desktop entry.
 - **M1** — Prompt & plugin orchestration via `fisher` (the reason-to-exist).
-  Plugins tab **done**; Prompt tab **done** (Tide/Hydro/Pure + built-ins).
-  Starship deferred to presets (needs the managed-block writer).
+  Plugins tab **done**; Prompt tab **done** — a mutually-exclusive radio group
+  (Default / Tide / Hydro / Pure / built-in), applying one removes the others
+  (fish has a single prompt slot). Starship deferred to presets.
 - **M2** — Theme gallery from `fish_config theme`. **Done** (card gallery,
   swatches, apply, current indicator, reset).
 - **M3** — Greeting / cursor knobs + backup-restore of `~/.config/fish/`.

@@ -98,6 +98,8 @@ def _snapshot_fish_config():
 def run_async(command, on_done, snapshot=False):
     """Run a *mutating* fish command off the UI thread; call on_done(Result).
 
+    `command` is a string, or a callable returning the command string (built in
+    the worker thread — handy when it depends on a query like `fisher list`).
     The command runs in a visible terminal (Alacritty) so the user sees exactly
     what is changing their system — never a black box. Read-only queries use
     run_fish directly and stay silent.
@@ -105,7 +107,8 @@ def run_async(command, on_done, snapshot=False):
 
     def worker():
         backup = ensure_snapshot() if snapshot else None
-        ok, message = _run_visibly(command)
+        resolved = command() if callable(command) else command
+        ok, message = _run_visibly(resolved)
         on_done(Result(ok, message, backup))
 
     threading.Thread(target=worker, daemon=True).start()

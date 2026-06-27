@@ -6,24 +6,27 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
 
 ### What Changed
 
-- **Prompt-conflict fix.** Installing a framework (Tide/Hydro/Pure) failed when a
-  built-in prompt or previous framework had already written `fish_prompt.fish`
-  (`fisher: Cannot install … remove or move conflicting files first`). fish has
-  one prompt slot, so installing a framework now first confirms ("Set your prompt
-  to X? — replaces your current prompt, backed up first"), then runs a single
-  visible command that clears the conflicting prompt files and installs:
-  `rm -f …/fish_prompt.fish …; and fisher install <spec>`. Removing a framework
-  is unchanged (no conflict).
-- **Reset to default prompt.** New button in the Prompt tab (mirrors the Themes
-  tab's reset) that removes any installed framework and clears the prompt
-  function files, reverting to fish's built-in default — run visibly.
-- **Prompt info panel.** Selecting a framework row now shows a details + first-
-  steps panel below (e.g. Tide → run `tide configure`; Hydro/Pure → the
-  `hydro_*`/`pure_*` variables), filling the previously empty space.
-- **One-prompt-at-a-time notice.** fish has a single prompt slot, so multiple
-  frameworks can be *installed* but only the last-applied is *active*. After a
-  framework install the orange status now says so: "<X> is now your prompt. Only
-  one prompt framework is active at a time — installing another replaces it."
+- **Prompt tab redesigned as a mutually-exclusive radio group.** fish has a
+  single prompt slot, so the Prompt tab is now one "choose your prompt" group:
+  **Default** (fish's built-in), the three **frameworks** (Tide/Hydro/Pure), and
+  **Built-in style** (dropdown), with an **Apply prompt** button. Applying any
+  option runs one visible command that **removes every other installed framework,
+  clears the prompt function files, then sets the chosen prompt** — so the
+  selection honestly reflects the one active prompt (no more multiple toggles ON
+  while only the last is active). The selection is restored from `prefs.json`
+  (`current_prompt` / `current_builtin`).
+  - This consolidates and replaces the earlier switch-based toggles, the separate
+    "Reset to default" button (now the **Default** option), the install-conflict
+    pre-flight (now inherent — others are always cleared first), and the
+    one-prompt-at-a-time notice (now structural). `ftt_prompt`'s three functions
+    collapse into one `set_prompt_async`; `run_async` gained callable-command
+    support so the removal list can be built from a live `fisher list`.
+  - **Tide tag handling:** Tide installs as `IlanCosman/tide@v6` and fisher lists
+    *and removes* it by that exact tagged name, so framework matching compares the
+    base (before `@`) but removes the exact installed name.
+- **Prompt info panel.** Selecting a prompt option shows a details + first-steps
+  panel below (Tide → run `tide configure`; Hydro/Pure → the `hydro_*`/`pure_*`
+  variables; Default/Built-in → what they do), filling the previously empty space.
 
 - **No black box — mutating commands run visibly in Alacritty.** Every change to
   the system (fisher install/remove, theme save, prompt save) now opens a

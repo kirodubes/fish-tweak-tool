@@ -1,16 +1,16 @@
-"""Built-in prompt selection for fish-tweak-tool.
+"""Prompt selection for fish-tweak-tool — one prompt at a time.
 
-Wraps ``fish_config prompt`` — fish's own manager for the ~13 sample prompts.
-Choosing one writes ``~/.config/fish/functions/fish_prompt.fish`` (via
-``fish_config prompt save``), which fish owns. Installable prompt *frameworks*
-(Tide, Hydro, Pure) go through :mod:`ftt_fisher` instead.
+fish has a single prompt slot, so choosing a prompt is mutually exclusive:
+applying one removes any installed framework and clears the prompt function
+files, then sets the chosen prompt. A built-in style goes through
+``fish_config prompt save``; a framework through ``fisher install``.
 """
 
 import ftt_fisher
 
 # A prompt framework wants to own these files, but a built-in prompt (or a
-# previous framework) may already have written them — fisher then refuses to
-# install. We clear them first so switching prompts always works.
+# previous framework) may already have written them. Clearing them first makes
+# switching prompts always work.
 _PROMPT_FUNCTION_FILES = [
     "~/.config/fish/functions/fish_prompt.fish",
     "~/.config/fish/functions/fish_right_prompt.fish",
@@ -26,38 +26,34 @@ def list_builtin():
     return [line.strip() for line in out.splitlines() if line.strip()]
 
 
-def apply_builtin_async(name, on_done, snapshot=False):
-    """Choose and persist a built-in prompt off the UI thread; call on_done(Result).
+def set_prompt_async(choice, frameworks, on_done, snapshot=True):
+    """Apply a single prompt exclusively, off the UI thread; call on_done(Result).
 
-    `fish_config prompt save <name>` selects and saves in one step, but gates on
-    an interactive "Overwrite? [y/N]" read; piping `y` confirms it non-interactively.
-    """
-    ftt_fisher.run_async(
-        f"echo y | fish_config prompt save {name}",
-        on_done,
-        snapshot,
-    )
+    `choice` is one of:
+      ("default",)         — fish's built-in default (just clear everything)
+      ("builtin", name)    — a fish_config built-in style
+      ("framework", spec)  — install a prompt framework
 
-
-def install_framework_async(install_spec, on_done, snapshot=True):
-    """Install a prompt framework, clearing any conflicting prompt files first.
-
-    fish has one prompt slot, so a built-in prompt or previous framework leaves a
-    `fish_prompt.fish` that blocks `fisher install`. We `rm -f` the prompt files
-    (already captured in the pre-install snapshot) then install — all shown in
-    the visible terminal.
+    `frameworks` is the list of (key, spec); any currently-installed one is
+    removed first so only the chosen prompt remains. The whole thing runs as one
+    visible command, and the final command's status is the reported result.
     """
     files = " ".join(_PROMPT_FUNCTION_FILES)
-    ftt_fisher.run_async(f"rm -f {files}; and fisher install {install_spec}", on_done, snapshot)
 
+    framework_bases = {key.lower() for key, _ in frameworks}
 
-def reset_default_async(installed_frameworks, on_done, snapshot=True):
-    """Revert to fish's built-in default prompt off the UI thread; call on_done(Result).
+    def build():
+        # fisher lists (and removes) plugins by their exact name, which may carry a
+        # version tag (Tide → "ilancosman/tide@v6"). Match a framework by its base
+        # (before "@") but remove using the exact installed name.
+        installed = ftt_fisher.list_installed()
+        removes = [name for name in installed if name.split("@")[0].lower() in framework_bases]
+        parts = [f"fisher remove {name}" for name in removes]
+        parts.append(f"rm -f {files}")
+        if choice[0] == "builtin":
+            parts.append(f"echo y | fish_config prompt save {choice[1]}")
+        elif choice[0] == "framework":
+            parts.append(f"fisher install {choice[1]}")
+        return "; ".join(parts)
 
-    Removes any installed prompt framework (so its files and fisher entry go),
-    then deletes any leftover prompt function files (from a built-in prompt) so
-    fish falls back to its compiled-in default — all shown in the visible terminal.
-    """
-    parts = [f"fisher remove {key}" for key in installed_frameworks]
-    parts.append(f"rm -f {' '.join(_PROMPT_FUNCTION_FILES)}")
-    ftt_fisher.run_async("; and ".join(parts), on_done, snapshot)
+    ftt_fisher.run_async(build, on_done, snapshot)

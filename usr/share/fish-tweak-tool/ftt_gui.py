@@ -291,115 +291,109 @@ class PluginsTab(_FisherTab):
 # ── Prompt tab ───────────────────────────────────────────────────────────────
 
 
-class PromptTab(_FisherTab):
-    """Prompt tab — install a prompt framework (fisher) or pick a built-in (M1)."""
+class PromptTab(_StatusMixin):
+    """Prompt tab — choose one prompt: default, a built-in style, or a framework (M1).
+
+    fish has a single prompt slot, so the options are a mutually-exclusive radio
+    group. Applying one removes any other framework and sets the chosen prompt,
+    so the selection honestly reflects the one active prompt.
+    """
 
     def __init__(self):
-        super().__init__()
-        self._specs = {}
+        self._prefs = ftt_config.load_prefs()
+        self._specs = {key: spec for key, spec, _ in _PROMPT_FRAMEWORKS}
+        self._radios = {}
+        self._group_first = None
+        self._builtin_names = []
         self._dropdown = None
         self._apply_btn = None
-        self._framework_order = []
         self._info_label = None
+        self._status = None
+        self._status_timeout = 0
         self.widget = self._build()
 
-    def _install_spec(self, key):
-        return self._specs.get(key, key)
-
-    def _on_toggle(self, row, want_on):
-        # Removing is conflict-free; installing replaces the one prompt slot, so confirm.
-        if not want_on:
-            super()._on_toggle(row, want_on)
-            return
-
-        dialog = Gtk.AlertDialog()
-        dialog.set_modal(True)
-        dialog.set_message(f"Set your prompt to {row.plugin}?")
-        dialog.set_detail(
-            "A prompt framework replaces your current fish prompt. Your fish "
-            "config is backed up first — restore it from Settings → Backup & restore."
-        )
-        dialog.set_buttons(["Cancel", "Replace"])
-        dialog.set_cancel_button(0)
-        dialog.set_default_button(1)
-        dialog.choose(self.widget.get_root(), None, lambda dlg, res: self._confirm_install(dlg, res, row))
-
-    def _confirm_install(self, dialog, result, row):
-        try:
-            chosen = dialog.choose_finish(result)
-        except GLib.Error:
-            chosen = 0
-        if chosen != 1:
-            row.set_installed(False)  # revert the switch the user flipped on
-            return
-        row.set_loading(True)
-        self._set_status("")
-
-        def on_done(result):
-            GLib.idle_add(self._framework_installed, row, result)
-
-        ftt_prompt.install_framework_async(self._install_spec(row.plugin), on_done, snapshot=True)
-
-    def _framework_installed(self, row, result):
-        row.set_loading(False)
-        if result.ok:
-            row.set_installed(True)
-            self._set_status(
-                f"{row.plugin} is now your prompt. Only one prompt framework is active "
-                "at a time — installing another replaces it."
-            )
+    def _add_radio(self, container, rid, label, sensitive=True):
+        radio = Gtk.CheckButton(label=label)
+        radio.set_margin_top(4)
+        radio.set_margin_bottom(4)
+        radio.set_margin_start(8)
+        radio.set_margin_end(8)
+        if self._group_first is None:
+            self._group_first = radio
         else:
-            row.set_installed(False)
-            detail = result.message or "see terminal for details"
-            self._set_status(f"{row.plugin} failed: {detail}", error=True)
-        return False
+            radio.set_group(self._group_first)
+        radio.set_sensitive(sensitive)
+        radio.connect("toggled", self._on_radio_toggled, rid)
+        self._radios[rid] = radio
+        if container is not None:
+            container.append(radio)
+        return radio
 
-    def _on_framework_selected(self, _listbox, listrow):
-        if listrow is None:
-            self._info_label.set_markup(_FRAMEWORK_INFO_DEFAULT)
+    def _on_radio_toggled(self, button, rid):
+        if not button.get_active():
             return
-        key = self._framework_order[listrow.get_index()]
-        self._info_label.set_markup(_FRAMEWORK_INFO.get(key, _FRAMEWORK_INFO_DEFAULT))
+        if self._dropdown is not None:
+            self._dropdown.set_sensitive(rid == "builtin")
+        self._info_label.set_markup(self._info_for(rid))
+
+    def _info_for(self, rid):
+        if rid.startswith("framework:"):
+            return _FRAMEWORK_INFO.get(rid.split(":", 1)[1], _FRAMEWORK_INFO_DEFAULT)
+        if rid == "builtin":
+            return (
+                "<b>Built-in styles</b> ship with fish — zero dependencies. Pick one "
+                "from the dropdown and Apply; fish saves it as your prompt via "
+                "<tt>fish_config prompt save</tt>."
+            )
+        return (
+            "<b>Default</b> — fish's built-in prompt, no plugin. Applying removes any "
+            "framework or custom prompt and returns to the plain fish look."
+        )
 
     def _build(self):
+        fisher = ftt_fisher.is_fisher_available()
+        self._builtin_names = ftt_prompt.list_builtin()
+
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         for side in ("top", "bottom", "start", "end"):
             getattr(box, f"set_margin_{side}")(16)
 
         self._init_status()
-
-        if ftt_fisher.is_fisher_available():
-            box.append(_section("Prompt frameworks"))
-            box.append(
-                _intro(
-                    "Installing a framework activates it. Turn it off to remove it "
-                    "and return to your previous prompt. Click one for details below."
-                )
+        box.append(_section("Prompt"))
+        box.append(
+            _intro(
+                "Choose one prompt. fish has a single prompt slot, so applying one "
+                "removes any other framework and makes this your prompt."
             )
-            listbox = Gtk.ListBox()
-            listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
-            listbox.add_css_class("plugin-list")
-            for key, spec, description in _PROMPT_FRAMEWORKS:
-                row = _PluginRow(key, description, self._on_toggle)
-                self._rows[key] = row
-                self._specs[key] = spec
-                self._framework_order.append(key)
-                listbox.append(row.widget)
-            listbox.connect("row-selected", self._on_framework_selected)
-            listbox.unselect_all()
-            box.append(listbox)
-        else:
-            box.append(_intro("fisher is not available — install it (sudo pacman -S fisher) to add prompt frameworks."))
+        )
 
-        box.append(_section("Built-in prompts"))
-        box.append(_intro("Zero-dependency prompt styles that ship with fish."))
-        box.append(self._build_builtin_picker())
+        group = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        group.add_css_class("plugin-list")
+        self._add_radio(group, "default", "Default — fish's built-in prompt")
+        for key, _spec, desc in _PROMPT_FRAMEWORKS:
+            name = key.rsplit("/", 1)[-1].capitalize()
+            self._add_radio(group, f"framework:{key}", f"{name} — {desc}", sensitive=fisher)
 
-        reset_btn = Gtk.Button(label="Reset to default prompt")
-        reset_btn.set_halign(Gtk.Align.START)
-        reset_btn.set_tooltip_text("Remove any framework and custom prompt; back to fish's default")
-        reset_btn.connect("clicked", self._reset_prompt)
-        box.append(reset_btn)
+        builtin_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        builtin_row.append(self._add_radio(None, "builtin", "Built-in style", sensitive=bool(self._builtin_names)))
+        self._dropdown = Gtk.DropDown.new_from_strings(self._builtin_names or ["(none)"])
+        self._dropdown.set_hexpand(True)
+        self._dropdown.set_sensitive(False)
+        self._dropdown.set_margin_end(8)
+        builtin_row.append(self._dropdown)
+        group.append(builtin_row)
+        box.append(group)
+
+        self._apply_btn = Gtk.Button(label="Apply prompt")
+        self._apply_btn.add_css_class("suggested-action")
+        self._apply_btn.set_halign(Gtk.Align.START)
+        self._apply_btn.connect("clicked", self._apply_prompt)
+        box.append(self._apply_btn)
+
+        if not fisher:
+            note = _intro("fisher is not available — install it (sudo pacman -S fisher) to use prompt frameworks.")
+            note.add_css_class("muted")
+            box.append(note)
 
         starship_note = _intro("Starship support is coming with presets.")
         starship_note.add_css_class("muted")
@@ -410,71 +404,61 @@ class PromptTab(_FisherTab):
         self._info_label.add_css_class("info-panel")
         self._info_label.set_wrap(True)
         self._info_label.set_vexpand(True)
-        self._info_label.set_markup(_FRAMEWORK_INFO_DEFAULT)
         box.append(self._info_label)
 
         box.append(self._status)
-
-        if self._rows:
-            self._refresh_states()
+        self._restore_selection()
 
         scroller = Gtk.ScrolledWindow()
         scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroller.set_vexpand(True)
         scroller.set_child(box)
         return scroller
 
-    def _build_builtin_picker(self):
-        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        names = ftt_prompt.list_builtin()
-        self._apply_btn = Gtk.Button(label="Apply")
-        if names:
-            self._dropdown = Gtk.DropDown.new_from_strings(names)
-            self._dropdown.set_hexpand(True)
-            self._apply_btn.connect("clicked", self._apply_builtin)
-            row.append(self._dropdown)
-            row.append(self._apply_btn)
-        else:
-            self._apply_btn.set_sensitive(False)
-            row.append(_intro("Could not read fish_config prompt list."))
-        return row
+    def _restore_selection(self):
+        current = self._prefs.get("current_prompt", "default")
+        radio = self._radios.get(current)
+        if radio is None or not radio.get_sensitive():
+            radio = self._radios["default"]
+        radio.set_active(True)
+        saved = self._prefs.get("current_builtin")
+        if saved in self._builtin_names:
+            self._dropdown.set_selected(self._builtin_names.index(saved))
 
-    def _apply_builtin(self, _btn):
-        idx = self._dropdown.get_selected()
-        name = self._dropdown.get_model().get_string(idx)
+    def _apply_prompt(self, _btn):
+        rid = next((r for r, b in self._radios.items() if b.get_active()), "default")
+        builtin_name = None
+        if rid == "builtin":
+            if not self._builtin_names:
+                self._set_status("No built-in prompts found.", error=True)
+                return
+            builtin_name = self._dropdown.get_model().get_string(self._dropdown.get_selected())
+            choice = ("builtin", builtin_name)
+        elif rid.startswith("framework:"):
+            choice = ("framework", self._specs[rid.split(":", 1)[1]])
+        else:
+            choice = ("default",)
+
         self._apply_btn.set_sensitive(False)
-        self._set_status(f"Applying {name}…")
+        self._set_status("Applying prompt…")
+        frameworks = [(key, spec) for key, spec, _ in _PROMPT_FRAMEWORKS]
 
         def on_done(result):
-            GLib.idle_add(self._builtin_finished, name, result)
+            GLib.idle_add(self._prompt_applied, rid, builtin_name, result)
 
-        ftt_prompt.apply_builtin_async(name, on_done, snapshot=True)
+        ftt_prompt.set_prompt_async(choice, frameworks, on_done, snapshot=True)
 
-    def _builtin_finished(self, name, result):
+    def _prompt_applied(self, rid, builtin_name, result):
         self._apply_btn.set_sensitive(True)
         if result.ok:
-            self._set_status(f"Built-in prompt '{name}' applied. Open a new shell to see it.")
+            self._prefs["current_prompt"] = rid
+            if builtin_name is not None:
+                self._prefs["current_builtin"] = builtin_name
+            ftt_config.save_prefs(self._prefs)
+            self._set_status("Prompt applied. Open a new shell to see it.")
         else:
             detail = result.message or "see terminal for details"
-            self._set_status(f"Could not apply {name}: {detail}", error=True)
-        return False
-
-    def _reset_prompt(self, _btn):
-        installed = [key for key, row in self._rows.items() if row.switch.get_active()]
-        self._set_status("Resetting prompt…")
-
-        def on_done(result):
-            GLib.idle_add(self._reset_finished, result)
-
-        ftt_prompt.reset_default_async(installed, on_done, snapshot=True)
-
-    def _reset_finished(self, result):
-        if result.ok:
-            for row in self._rows.values():
-                row.set_installed(False)
-            self._set_status("Prompt reset to fish's default. Open a new shell to see it.")
-        else:
-            detail = result.message or "see terminal for details"
-            self._set_status(f"Reset failed: {detail}", error=True)
+            self._set_status(f"Could not apply prompt: {detail}", error=True)
         return False
 
 
