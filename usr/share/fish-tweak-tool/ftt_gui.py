@@ -1,6 +1,6 @@
 """GTK4 GUI for fish-tweak-tool.
 
-The Plugins tab (M1) is live; Prompt, Themes and Settings remain placeholders
+Plugins and Prompt tabs (M1) are live; Themes and Settings remain placeholders
 that later milestones fill in. Building the shell up-front means each milestone
 drops into a fixed slot with no structural churn.
 """
@@ -13,11 +13,11 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import GLib, Gtk  # noqa: E402
 
 import ftt_fisher  # noqa: E402
+import ftt_prompt  # noqa: E402
 import log  # noqa: E402
 
 # Placeholder tabs not yet built: title → one-line description.
 _PLACEHOLDERS = [
-    ("Prompt", "Install and enable a prompt — Tide, Starship, Hydro, Pure, or a built-in style."),
     ("Themes", "Browse and apply colour themes from fish_config theme."),
     ("Settings", "Greeting, cursor shape, and backup / restore of your fish config."),
 ]
@@ -28,6 +28,15 @@ _PLUGINS = [
     ("jorgebucaran/autopair.fish", "Auto-closes brackets, quotes and parens"),
     ("meaningful-ooo/sponge", "Drops failed commands from history"),
     ("nickeb96/puffer-fish", "Expands .. and ... as you type"),
+]
+
+# Installable prompt frameworks: (display/match key, fisher install spec, description).
+# Tide installs from a version tag but fisher lists it as the bare repo, so the
+# install spec and the match key differ.
+_PROMPT_FRAMEWORKS = [
+    ("IlanCosman/tide", "IlanCosman/tide@v6", "Modern async prompt with a setup wizard (tide configure)"),
+    ("jorgebucaran/hydro", "jorgebucaran/hydro", "Ultra-minimal async prompt; fast git + duration"),
+    ("pure-fish/pure", "pure-fish/pure", "Minimal clean prompt; directory + git branch"),
 ]
 
 
@@ -72,11 +81,23 @@ def _notice(title, detail):
     return box
 
 
-# ── Plugins tab ──────────────────────────────────────────────────────────────
+def _section(title):
+    """Return a left-aligned section heading label."""
+    lbl = Gtk.Label(label=title, xalign=0)
+    lbl.add_css_class("section-title")
+    return lbl
+
+
+def _intro(text):
+    """Return a left-aligned wrapped intro/description label."""
+    lbl = Gtk.Label(label=text, xalign=0)
+    lbl.add_css_class("plugin-desc")
+    lbl.set_wrap(True)
+    return lbl
 
 
 class _PluginRow:
-    """One plugin: name, description, busy spinner, install/remove switch."""
+    """One install target: name, description, busy spinner, install/remove switch."""
 
     def __init__(self, plugin, description, on_toggle):
         self.plugin = plugin
@@ -133,53 +154,16 @@ class _PluginRow:
             self.spinner.stop()
 
 
-class PluginsTab:
-    """Plugins tab — toggle the consensus fisher plugins (M1)."""
+# ── Shared fisher-tab behaviour ──────────────────────────────────────────────
+
+
+class _FisherTab:
+    """Common state/toggle logic for a tab whose rows install/remove via fisher."""
 
     def __init__(self):
-        self._snapshot_done = False
         self._rows = {}
         self._status = None
-        self.widget = self._build()
 
-    # ── construction ──────────────────────────────────────────────────────
-    def _build(self):
-        if not ftt_fisher.is_fisher_available():
-            return _notice("fisher is not available", "Install it with:  sudo pacman -S fisher")
-
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        box.set_margin_top(16)
-        box.set_margin_bottom(16)
-        box.set_margin_start(16)
-        box.set_margin_end(16)
-
-        intro = Gtk.Label(
-            label="Toggle a plugin to install or remove it with fisher. "
-            "Your fish config is backed up before the first change.",
-            xalign=0,
-        )
-        intro.add_css_class("plugin-desc")
-        intro.set_wrap(True)
-        box.append(intro)
-
-        listbox = Gtk.ListBox()
-        listbox.set_selection_mode(Gtk.SelectionMode.NONE)
-        listbox.add_css_class("plugin-list")
-        for plugin, description in _PLUGINS:
-            row = _PluginRow(plugin, description, self._on_toggle)
-            self._rows[plugin] = row
-            listbox.append(row.widget)
-        box.append(listbox)
-
-        self._status = Gtk.Label(label="", xalign=0)
-        self._status.add_css_class("status-line")
-        self._status.set_wrap(True)
-        box.append(self._status)
-
-        self._refresh_states()
-        return box
-
-    # ── state ─────────────────────────────────────────────────────────────
     def _refresh_states(self):
         def worker():
             installed = ftt_fisher.list_installed()
@@ -189,24 +173,25 @@ class PluginsTab:
 
     def _apply_states(self, installed):
         installed_lower = {p.lower() for p in installed}
-        for plugin, row in self._rows.items():
-            row.set_installed(plugin.lower() in installed_lower)
+        for key, row in self._rows.items():
+            row.set_installed(key.lower() in installed_lower)
         return False
 
-    # ── toggling ──────────────────────────────────────────────────────────
+    def _install_spec(self, key):
+        """The fisher install argument for a row key (overridden where they differ)."""
+        return key
+
     def _on_toggle(self, row, want_on):
         row.set_loading(True)
         self._set_status("")
-        snapshot = not self._snapshot_done
-        self._snapshot_done = True
 
         def on_done(result):
             GLib.idle_add(self._toggle_finished, row, want_on, result)
 
         if want_on:
-            ftt_fisher.install_async(row.plugin, on_done, snapshot=snapshot)
+            ftt_fisher.install_async(self._install_spec(row.plugin), on_done, snapshot=True)
         else:
-            ftt_fisher.remove_async(row.plugin, on_done, snapshot=snapshot)
+            ftt_fisher.remove_async(row.plugin, on_done, snapshot=True)
 
     def _toggle_finished(self, row, want_on, result):
         row.set_loading(False)
@@ -228,6 +213,148 @@ class PluginsTab:
             self._status.remove_css_class("status-error")
 
 
+# ── Plugins tab ──────────────────────────────────────────────────────────────
+
+
+class PluginsTab(_FisherTab):
+    """Plugins tab — toggle the consensus fisher plugins (M1)."""
+
+    def __init__(self):
+        super().__init__()
+        self.widget = self._build()
+
+    def _build(self):
+        if not ftt_fisher.is_fisher_available():
+            return _notice("fisher is not available", "Install it with:  sudo pacman -S fisher")
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        for side in ("top", "bottom", "start", "end"):
+            getattr(box, f"set_margin_{side}")(16)
+
+        box.append(
+            _intro(
+                "Toggle a plugin to install or remove it with fisher. "
+                "Your fish config is backed up before the first change."
+            )
+        )
+
+        listbox = Gtk.ListBox()
+        listbox.set_selection_mode(Gtk.SelectionMode.NONE)
+        listbox.add_css_class("plugin-list")
+        for plugin, description in _PLUGINS:
+            row = _PluginRow(plugin, description, self._on_toggle)
+            self._rows[plugin] = row
+            listbox.append(row.widget)
+        box.append(listbox)
+
+        self._status = Gtk.Label(label="", xalign=0)
+        self._status.add_css_class("status-line")
+        self._status.set_wrap(True)
+        box.append(self._status)
+
+        self._refresh_states()
+        return box
+
+
+# ── Prompt tab ───────────────────────────────────────────────────────────────
+
+
+class PromptTab(_FisherTab):
+    """Prompt tab — install a prompt framework (fisher) or pick a built-in (M1)."""
+
+    def __init__(self):
+        super().__init__()
+        self._specs = {}
+        self._dropdown = None
+        self._apply_btn = None
+        self.widget = self._build()
+
+    def _install_spec(self, key):
+        return self._specs.get(key, key)
+
+    def _build(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        for side in ("top", "bottom", "start", "end"):
+            getattr(box, f"set_margin_{side}")(16)
+
+        self._status = Gtk.Label(label="", xalign=0)
+        self._status.add_css_class("status-line")
+        self._status.set_wrap(True)
+
+        if ftt_fisher.is_fisher_available():
+            box.append(_section("Prompt frameworks"))
+            box.append(
+                _intro(
+                    "Installing a framework activates it. Turn it off to remove it "
+                    "and return to your previous prompt."
+                )
+            )
+            listbox = Gtk.ListBox()
+            listbox.set_selection_mode(Gtk.SelectionMode.NONE)
+            listbox.add_css_class("plugin-list")
+            for key, spec, description in _PROMPT_FRAMEWORKS:
+                row = _PluginRow(key, description, self._on_toggle)
+                self._rows[key] = row
+                self._specs[key] = spec
+                listbox.append(row.widget)
+            box.append(listbox)
+        else:
+            box.append(_intro("fisher is not available — install it (sudo pacman -S fisher) to add prompt frameworks."))
+
+        box.append(_section("Built-in prompts"))
+        box.append(_intro("Zero-dependency prompt styles that ship with fish."))
+        box.append(self._build_builtin_picker())
+
+        starship_note = _intro("Starship support is coming with presets.")
+        starship_note.add_css_class("muted")
+        box.append(starship_note)
+
+        box.append(self._status)
+
+        if self._rows:
+            self._refresh_states()
+
+        scroller = Gtk.ScrolledWindow()
+        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroller.set_child(box)
+        return scroller
+
+    def _build_builtin_picker(self):
+        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        names = ftt_prompt.list_builtin()
+        self._apply_btn = Gtk.Button(label="Apply")
+        if names:
+            self._dropdown = Gtk.DropDown.new_from_strings(names)
+            self._dropdown.set_hexpand(True)
+            self._apply_btn.connect("clicked", self._apply_builtin)
+            row.append(self._dropdown)
+            row.append(self._apply_btn)
+        else:
+            self._apply_btn.set_sensitive(False)
+            row.append(_intro("Could not read fish_config prompt list."))
+        return row
+
+    def _apply_builtin(self, _btn):
+        idx = self._dropdown.get_selected()
+        name = self._dropdown.get_model().get_string(idx)
+        self._apply_btn.set_sensitive(False)
+        self._set_status(f"Applying {name}…")
+
+        def on_done(result):
+            GLib.idle_add(self._builtin_finished, name, result)
+
+        ftt_prompt.apply_builtin_async(name, on_done, snapshot=True)
+
+    def _builtin_finished(self, name, result):
+        self._apply_btn.set_sensitive(True)
+        if result.ok:
+            self._set_status(f"Built-in prompt '{name}' applied. Open a new shell to see it.")
+        else:
+            detail = result.message or "see terminal for details"
+            self._set_status(f"Could not apply {name}: {detail}", error=True)
+        return False
+
+
 # ── Entry point ──────────────────────────────────────────────────────────────
 
 
@@ -237,6 +364,7 @@ def build(window, fish_version):
     notebook.set_scrollable(True)
 
     notebook.append_page(PluginsTab().widget, Gtk.Label(label="Plugins"))
+    notebook.append_page(PromptTab().widget, Gtk.Label(label="Prompt"))
     for title, description in _PLACEHOLDERS:
         notebook.append_page(_placeholder(title, description), Gtk.Label(label=title))
 

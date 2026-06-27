@@ -24,8 +24,9 @@ sudo) and ships in `nemesis_repo`. ATT's Shells → Fish tab will deep-link to i
 ```
 usr/share/fish-tweak-tool/
 ├── fish-tweak-tool.py   # Entry point: Gtk.Application + Main window
-├── ftt_gui.py           # GUI: four-tab Notebook; Plugins tab live (M1)
+├── ftt_gui.py           # GUI: four-tab Notebook; Plugins + Prompt tabs live (M1)
 ├── ftt_fisher.py        # M1 orchestration: fisher install/remove + snapshot
+├── ftt_prompt.py        # M1 built-in prompts: fish_config prompt save
 ├── ftt_config.py        # App preferences (window size); NOT the fish config
 ├── log.py               # Logging: log_section / log_info / log_success / ...
 └── ftt.css              # GTK4 stylesheet
@@ -71,7 +72,8 @@ wrong silently clobbers user settings:
 
 - **M0** — Scaffold (done): GTK4 skeleton, launcher, desktop entry.
 - **M1** — Prompt & plugin orchestration via `fisher` (the reason-to-exist).
-  Plugins tab **done**; Prompt tab (Tide/Starship/Hydro/Pure + built-ins) next.
+  Plugins tab **done**; Prompt tab **done** (Tide/Hydro/Pure + built-ins).
+  Starship deferred to presets (needs the managed-block writer).
 - **M2** — Theme gallery from `fish_config theme`.
 - **M3** — Greeting / cursor knobs + backup-restore of `~/.config/fish/`.
 - **M4** — Presets (one-click Kiro-default / Minimal / Tide bundles).

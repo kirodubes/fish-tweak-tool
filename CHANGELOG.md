@@ -14,6 +14,11 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   This is the tool's reason-to-exist — orchestration `fish_config` can't do.
   Adopted the design study's leanings: snapshot `~/.config/fish/` before the
   first change (D9) and treat every fisher call as fallible and per-user (D10).
+- **M1 (prompt half).** The Prompt tab is now live: install/remove prompt
+  frameworks **Tide / Hydro / Pure** via fisher, plus a picker for fish's ~13
+  built-in prompt styles (`fish_config prompt save`). **Starship is deferred** —
+  enabling it needs a managed-block line in `config.fish`, which arrives with
+  presets (M4); the tab flags this.
 
 ### Technical Details
 
@@ -41,6 +46,16 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   (`PatrickF1/fzf.fish` → `patrickf1/fzf.fish`). Switches use a `busy` guard so
   programmatic state syncs don't trigger install/remove. Snapshot fires once per
   session, before the first mutation, into `~/.config/fish-tweak-tool/backups/`.
+- **M1 prompt internals:** refactored `ftt_fisher.py` to expose shared
+  primitives (`run_fish`, `run_async`, `ensure_snapshot`) and made the snapshot
+  fire **once per process** (so plugin + prompt actions share one backup). New
+  `ftt_prompt.py` wraps `fish_config prompt`. The built-in `save` is
+  interactive (`read` "Overwrite? [y/N]"); run via `fish -c` it gets EOF and
+  refuses with "Not overwriting", so the apply pipes `y`:
+  `echo y | fish_config prompt save <name>`. `ftt_gui.py` gained a `_FisherTab`
+  base class shared by the Plugins and Prompt tabs; Tide's install spec
+  (`IlanCosman/tide@v6`) differs from its fisher-list key (`ilancosman/tide`),
+  handled via a per-tab `_install_spec` override.
 
 ### Files Modified
 
@@ -48,8 +63,9 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
 - `usr/bin/fish-tweak-tool` (new)
 - `usr/share/applications/fish-tweak-tool.desktop` (new)
 - `usr/share/fish-tweak-tool/fish-tweak-tool.py` (new)
-- `usr/share/fish-tweak-tool/ftt_gui.py` (new; Plugins tab added for M1)
+- `usr/share/fish-tweak-tool/ftt_gui.py` (new; Plugins + Prompt tabs for M1)
 - `usr/share/fish-tweak-tool/ftt_fisher.py` (new; M1 orchestration core)
+- `usr/share/fish-tweak-tool/ftt_prompt.py` (new; built-in prompt wrapper)
 - `usr/share/fish-tweak-tool/ftt_config.py` (new)
 - `usr/share/fish-tweak-tool/log.py` (new)
 - `usr/share/fish-tweak-tool/ftt.css` (new; plugin row + status styles)

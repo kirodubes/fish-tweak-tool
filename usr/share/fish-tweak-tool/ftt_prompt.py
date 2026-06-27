@@ -18,9 +18,13 @@ def list_builtin():
 
 
 def apply_builtin_async(name, on_done, snapshot=False):
-    """Choose and persist a built-in prompt off the UI thread; call on_done(Result)."""
+    """Choose and persist a built-in prompt off the UI thread; call on_done(Result).
+
+    `fish_config prompt save <name>` selects and saves in one step, but gates on
+    an interactive "Overwrite? [y/N]" read; piping `y` confirms it non-interactively.
+    """
     ftt_fisher.run_async(
-        f"fish_config prompt choose {name}; and fish_config prompt save",
+        f"echo y | fish_config prompt save {name}",
         on_done,
         snapshot,
     )
