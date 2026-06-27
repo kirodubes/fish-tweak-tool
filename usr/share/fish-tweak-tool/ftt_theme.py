@@ -13,18 +13,18 @@ import ftt_fisher
 SYSTEM_THEME_DIR = "/usr/share/fish/themes"
 USER_THEME_DIR = os.path.expanduser("~/.config/fish/themes")
 
-# fish_color keys sampled for the swatch foreground bars, in display order.
-_SWATCH_KEYS = [
-    "fish_color_command",
-    "fish_color_param",
-    "fish_color_quote",
-    "fish_color_redirection",
-    "fish_color_error",
-    "fish_color_comment",
-]
-
 _HEX_RE = re.compile(r"^[0-9a-fA-F]{6}$|^[0-9a-fA-F]{3}$")
 _AWARE_RE = re.compile(r"^\[(dark|light|unknown)\]")
+
+# Themes may name colours instead of giving hex (e.g. `fish_color_comment red`).
+# Map the 16 fish/ANSI names to representative hex so swatches/previews render.
+_ANSI_HEX = {
+    "black": "#2e3436", "red": "#cc0000", "green": "#4e9a06", "yellow": "#c4a000",
+    "blue": "#3465a4", "magenta": "#75507b", "purple": "#75507b", "cyan": "#06989a",
+    "white": "#d3d7cf", "brblack": "#555753", "brred": "#ef2929", "brgreen": "#8ae234",
+    "bryellow": "#fce94f", "brblue": "#729fcf", "brmagenta": "#ad7fa8", "brpurple": "#ad7fa8",
+    "brcyan": "#34e2e2", "brwhite": "#eeeeec",
+}
 
 
 def list_themes():
@@ -45,15 +45,16 @@ def theme_file(name):
 
 
 def parse_theme(name, variant="dark"):
-    """Return (background_hex, [foreground_hex, ...]) for the swatch.
+    """Return (background_hex, {fish_color_key: hex}) for the chosen variant.
 
     Colour-theme-aware files split colours into [light]/[dark] sections; the
     requested variant is used, falling back to dark/light/unknown, then to the
-    file's top-level colours for non-aware themes.
+    file's top-level colours for non-aware themes. Named ANSI colours are mapped
+    to hex; flag-only values (`--reset`, `--reverse`) are dropped.
     """
     path = theme_file(name)
     if not path:
-        return None, []
+        return None, {}
 
     sections = {None: {"bg": None, "colors": {}}}
     current = None
@@ -70,7 +71,7 @@ def parse_theme(name, variant="dark"):
                 section["bg"] = _to_hex(line.split(":", 1)[1].strip())
             elif line and not line.startswith("#"):
                 parts = line.split()
-                value = _first_hex(parts[1:])
+                value = _resolve_color(parts[1:])
                 if value:
                     section["colors"][parts[0]] = value
 
@@ -81,8 +82,7 @@ def parse_theme(name, variant="dark"):
             chosen = candidate
             break
 
-    foregrounds = [chosen["colors"][k] for k in _SWATCH_KEYS if k in chosen["colors"]]
-    return chosen["bg"], foregrounds
+    return chosen["bg"], chosen["colors"]
 
 
 def is_color_theme_aware(name):
@@ -107,12 +107,20 @@ def apply_async(name, on_done, snapshot=False, color_theme="dark"):
     ftt_fisher.run_async(f"echo y | fish_config theme save {flag}{name}", on_done, snapshot)
 
 
-def _first_hex(tokens):
-    for token in tokens:
+def _resolve_color(tokens):
+    """First usable colour token → '#hex' (hex or named), ignoring flags; None if none."""
+    for raw in tokens:
+        token = raw.strip("\"'")  # some themes quote their values, e.g. '888'
+        if not token or token.startswith("-"):  # --reset, --reverse, --bold, --background=…
+            continue
         if _HEX_RE.match(token):
             return "#" + token
+        mapped = _ANSI_HEX.get(token.lower())
+        if mapped:
+            return mapped
     return None
 
 
 def _to_hex(token):
+    token = token.strip("\"'")
     return "#" + token if _HEX_RE.match(token) else None

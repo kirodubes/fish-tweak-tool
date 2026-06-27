@@ -114,6 +114,15 @@ Never use `subprocess.call()` from a GUI callback — always `Popen` in a daemon
 thread. `fisher` installs are network calls: every one is fallible (show state →
 attempt → report), per-user, and must never block the UI thread.
 
+### No black box — mutations run visibly
+
+Any command that *changes the user's system* (install/remove/apply) must run in a
+**visible terminal** (Alacritty) that prints the exact command first — never a
+hidden subprocess. This is `ftt_fisher.run_async` → `_run_visibly`; all mutating
+paths funnel through it. Read-only queries use `run_fish` and stay silent. When
+adding a new mutating action, route it through `run_async`, don't shell out
+silently.
+
 ### Markup
 
 Ampersands in `set_markup()` must be escaped as `&amp;` or the label renders empty.

@@ -141,12 +141,43 @@ class _PluginRow:
 # ── Shared fisher-tab behaviour ──────────────────────────────────────────────
 
 
-class _FisherTab:
+class _StatusMixin:
+    """A status label in ATT-orange that auto-clears 10s after the last message."""
+
+    def _init_status(self):
+        self._status = Gtk.Label(label="", xalign=0)
+        self._status.add_css_class("status-line")
+        self._status.set_wrap(True)
+        self._status_timeout = 0
+        return self._status
+
+    def _set_status(self, text, error=False):
+        self._status.set_text(text)
+        if error:
+            self._status.add_css_class("status-error")
+        else:
+            self._status.remove_css_class("status-error")
+        if self._status_timeout:
+            GLib.source_remove(self._status_timeout)
+            self._status_timeout = 0
+        if text:
+            self._status_timeout = GLib.timeout_add_seconds(10, self._clear_status)
+        return False
+
+    def _clear_status(self):
+        self._status.set_text("")
+        self._status.remove_css_class("status-error")
+        self._status_timeout = 0
+        return False
+
+
+class _FisherTab(_StatusMixin):
     """Common state/toggle logic for a tab whose rows install/remove via fisher."""
 
     def __init__(self):
         self._rows = {}
         self._status = None
+        self._status_timeout = 0
 
     def _refresh_states(self):
         def worker():
@@ -189,13 +220,6 @@ class _FisherTab:
             self._set_status(f"{row.plugin} failed: {detail}", error=True)
         return False
 
-    def _set_status(self, text, error=False):
-        self._status.set_text(text)
-        if error:
-            self._status.add_css_class("status-error")
-        else:
-            self._status.remove_css_class("status-error")
-
 
 # ── Plugins tab ──────────────────────────────────────────────────────────────
 
@@ -231,10 +255,7 @@ class PluginsTab(_FisherTab):
             listbox.append(row.widget)
         box.append(listbox)
 
-        self._status = Gtk.Label(label="", xalign=0)
-        self._status.add_css_class("status-line")
-        self._status.set_wrap(True)
-        box.append(self._status)
+        box.append(self._init_status())
 
         self._refresh_states()
         return box
@@ -261,9 +282,7 @@ class PromptTab(_FisherTab):
         for side in ("top", "bottom", "start", "end"):
             getattr(box, f"set_margin_{side}")(16)
 
-        self._status = Gtk.Label(label="", xalign=0)
-        self._status.add_css_class("status-line")
-        self._status.set_wrap(True)
+        self._init_status()
 
         if ftt_fisher.is_fisher_available():
             box.append(_section("Prompt frameworks"))
@@ -350,11 +369,73 @@ def _rgb(hex_color):
     return tuple(int(h[i : i + 2], 16) / 255 for i in (0, 2, 4))
 
 
-def _swatch(background, foregrounds, width=190, height=72):
-    """Return (DrawingArea, update_fn); update_fn(bg, fgs) recolours and redraws."""
+# fish_color keys shown as foreground bars in a swatch, in display order.
+_SWATCH_BAR_KEYS = [
+    "fish_color_command",
+    "fish_color_param",
+    "fish_color_quote",
+    "fish_color_redirection",
+    "fish_color_error",
+    "fish_color_comment",
+]
+
+# Hover-preview sample line: (text, fish_color key or None to use 'normal').
+_PREVIEW_TOKENS = [
+    ("~/project", "fish_color_cwd"),
+    (" ", None),
+    ("ls", "fish_color_command"),
+    (" ", None),
+    ("-la", "fish_color_param"),
+    (" ", None),
+    ("|", "fish_color_redirection"),
+    (" ", None),
+    ("grep", "fish_color_command"),
+    (" ", None),
+    ('"foo"', "fish_color_quote"),
+    ("   ", None),
+    ("# note", "fish_color_comment"),
+]
+
+
+def _bar_colors(colors):
+    """Pick the swatch foreground bar colours from a parsed colour dict."""
+    normal = colors.get("fish_color_normal")
+    out = []
+    for key in _SWATCH_BAR_KEYS:
+        color = colors.get(key) or normal
+        if color:
+            out.append(color)
+    return out
+
+
+def _preview_markup(background, colors):
+    """Build Pango markup of a fish_config-show-style sample in a theme's colours."""
+    bg = background or "#1d1f21"
+    normal = colors.get("fish_color_normal", "#d3d7cf")
+
+    def col(key):
+        return colors.get(key, normal) if key else normal
+
+    line1 = "".join(
+        f"<span foreground='{col(key)}'>{GLib.markup_escape_text(text)}</span>"
+        for text, key in _PREVIEW_TOKENS
+    )
+    line2 = (
+        f"<span foreground='{col('fish_color_error')}'>error:</span> "
+        f"<span foreground='{col('fish_color_autosuggestion')}'>"
+        f"{GLib.markup_escape_text('press → to accept')}</span>"
+    )
+    return (
+        f"<tt><span background='{bg}'>  {line1}  </span>\n"
+        f"<span background='{bg}'>  {line2}  </span></tt>"
+    )
+
+
+def _swatch(background, colors, width=190, height=72):
+    """Return (DrawingArea, update_fn); update_fn(bg, colors) recolours and redraws."""
     area = Gtk.DrawingArea()
     area.set_size_request(width, height)
-    state = {"bg": background, "fgs": foregrounds}
+    state = {"bg": background, "fgs": _bar_colors(colors)}
 
     def draw(_area, cr, w, h, _data=None):
         bg = _rgb(state["bg"]) if state["bg"] else (0.12, 0.12, 0.12)
@@ -370,16 +451,16 @@ def _swatch(background, foregrounds, width=190, height=72):
                 cr.rectangle(pad + i * bar_w + 2, h * 0.45, bar_w - 4, h * 0.35)
                 cr.fill()
 
-    def update(bg, fgs):
+    def update(bg, cols):
         state["bg"] = bg
-        state["fgs"] = fgs
+        state["fgs"] = _bar_colors(cols)
         area.queue_draw()
 
     area.set_draw_func(draw)
     return area, update
 
 
-class ThemesTab:
+class ThemesTab(_StatusMixin):
     """Themes tab — gallery of fish_config colour themes with apply (M2)."""
 
     def __init__(self):
@@ -388,6 +469,7 @@ class ThemesTab:
         self._variant = self._prefs.get("theme_variant", "dark")
         self._cards = {}
         self._swatch_updaters = {}
+        self._card_colors = {}
         self._status = None
         self._busy = False
         self.widget = self._build()
@@ -432,10 +514,7 @@ class ThemesTab:
             flow.append(card)
         box.append(flow)
 
-        self._status = Gtk.Label(label="", xalign=0)
-        self._status.add_css_class("status-line")
-        self._status.set_wrap(True)
-        box.append(self._status)
+        box.append(self._init_status())
 
         scroller = Gtk.ScrolledWindow()
         scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -444,14 +523,15 @@ class ThemesTab:
         return scroller
 
     def _make_card(self, name):
-        background, foregrounds = ftt_theme.parse_theme(name, self._variant)
+        background, colors = ftt_theme.parse_theme(name, self._variant)
+        self._card_colors[name] = (background, colors)
         button = Gtk.Button()
         button.add_css_class("theme-card")
         if name == self._current:
             button.add_css_class("theme-current")
 
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        swatch, update = _swatch(background, foregrounds)
+        swatch, update = _swatch(background, colors)
         self._swatch_updaters[name] = update
         content.append(swatch)
         label = Gtk.Label(label=name)
@@ -459,16 +539,29 @@ class ThemesTab:
         label.set_ellipsize(3)  # Pango.EllipsizeMode.END
         content.append(label)
         button.set_child(content)
+        button.set_has_tooltip(True)
+        button.connect("query-tooltip", self._on_card_tooltip, name)
         button.connect("clicked", lambda _b, n=name: self._apply(n))
         return button
+
+    def _on_card_tooltip(self, _widget, _x, _y, _keyboard, tooltip, name):
+        background, colors = self._card_colors.get(name, (None, {}))
+        label = Gtk.Label()
+        label.add_css_class("theme-preview")
+        label.set_markup(_preview_markup(background, colors))
+        for side in ("top", "bottom", "start", "end"):
+            getattr(label, f"set_margin_{side}")(8)
+        tooltip.set_custom(label)
+        return True
 
     def _on_variant_changed(self, dropdown, _param):
         self._variant = _VARIANTS[dropdown.get_selected()]
         self._prefs["theme_variant"] = self._variant
         ftt_config.save_prefs(self._prefs)
         for name, update in self._swatch_updaters.items():
-            background, foregrounds = ftt_theme.parse_theme(name, self._variant)
-            update(background, foregrounds)
+            background, colors = ftt_theme.parse_theme(name, self._variant)
+            self._card_colors[name] = (background, colors)
+            update(background, colors)
 
     def _apply(self, name):
         if self._busy:
@@ -497,18 +590,11 @@ class ThemesTab:
             self._set_status(f"Could not apply {name}: {detail}", error=True)
         return False
 
-    def _set_status(self, text, error=False):
-        self._status.set_text(text)
-        if error:
-            self._status.add_css_class("status-error")
-        else:
-            self._status.remove_css_class("status-error")
-
 
 # ── Settings tab ─────────────────────────────────────────────────────────────
 
 
-class SettingsTab:
+class SettingsTab(_StatusMixin):
     """Settings tab — greeting, cursor shape, and backup / restore (M3)."""
 
     def __init__(self):
@@ -541,10 +627,7 @@ class SettingsTab:
         box.append(_section("Backup & restore"))
         box.append(self._build_backup())
 
-        self._status = Gtk.Label(label="", xalign=0)
-        self._status.add_css_class("status-line")
-        self._status.set_wrap(True)
-        box.append(self._status)
+        box.append(self._init_status())
 
         scroller = Gtk.ScrolledWindow()
         scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -679,14 +762,6 @@ class SettingsTab:
     def _refresh_backups(self):
         names = self._backup_names()
         self._backup_dropdown.set_model(Gtk.StringList.new(names))
-
-    def _set_status(self, text, error=False):
-        self._status.set_text(text)
-        if error:
-            self._status.add_css_class("status-error")
-        else:
-            self._status.remove_css_class("status-error")
-        return False
 
 
 # ── Entry point ──────────────────────────────────────────────────────────────

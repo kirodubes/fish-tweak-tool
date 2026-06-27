@@ -38,8 +38,9 @@ label#title {
 }
 
 .status-line {
-    color: alpha(currentColor, 0.75);
+    color: #ffa500;  /* ATT orange */
     font-size: 14px;
+    font-weight: 600;
     min-height: 20px;
     margin-top: 4px;
 }

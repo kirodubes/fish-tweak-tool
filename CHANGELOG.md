@@ -6,6 +6,19 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
 
 ### What Changed
 
+- **No black box — mutating commands run visibly in Alacritty.** Every change to
+  the system (fisher install/remove, theme save, prompt save) now opens a
+  terminal that prints the exact command before running it and shows live
+  output; the user presses enter to close. Read-only queries (listing installed
+  plugins/themes) stay silent. Falls back to a silent in-process run only when no
+  terminal is found. The UI still gets success/failure via a status file.
+- **Status line uses ATT orange (`#ffa500`).** Success/info messages now match
+  the ArchLinux Tweak Tool accent; errors stay red. Status text **auto-clears
+  after 10 s** (a new message resets the timer). Centralised the four tabs' three
+  duplicate `_set_status` methods into one `_StatusMixin` carrying the colour +
+  timer.
+
+
 - **M0 scaffold.** Stood up the standalone GTK4 / PyGObject application: it
   launches a tabbed shell (Plugins · Prompt · Themes · Settings) ready for the
   M1–M4 milestones to fill in.
@@ -84,7 +97,17 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   are now **variant-aware**: `parse_theme` reads colours from the matching
   `[light]`/`[dark]` section, and switching the dropdown live-redraws every
   card (aware themes flip palettes, non-aware stay put). Swatch DrawingAreas
-  gained an `update(bg, fgs)` + `queue_draw` path for the live recolour.
+  gained an `update(bg, colors)` + `queue_draw` path for the live recolour.
+- **M2 hover preview.** Hovering a theme card now shows a `fish_config theme
+  show`-style sample — a colored code line + error/autosuggestion line in the
+  theme's actual colors — rendered as a custom-widget tooltip via Pango markup
+  (no subprocess, no VTE). It honours the dark/light variant and works for any
+  `.theme` file, so third-party themes dropped in the theme dirs get it for free.
+- **M2 parser hardening (for third-party themes).** `parse_theme` now returns a
+  full `{fish_color_key: hex}` dict and resolves **named ANSI colors**
+  (`red`, `brblue`, …) via a 16-color map, **drops flag-only values**
+  (`--reset`, `--reverse`, `--bold`), and **strips quotes** around values
+  (`'888'`). Previously hex-only, so named/quoted themes rendered incompletely.
 - **M3 internals:** new `ftt_managed.py` owns the managed block — a marker-
   delimited region (`# >>> fish-tweak-tool managed block >>>` … `<<<`) that is
   fully regenerated from a settings dict and inserted/replaced idempotently

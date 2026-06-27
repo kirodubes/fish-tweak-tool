@@ -14,12 +14,18 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 import threading
 
 import log
 
 FISH_CONFIG_DIR = os.path.expanduser("~/.config/fish")
 BACKUP_DIR = os.path.expanduser("~/.config/fish-tweak-tool/backups")
+
+# Terminals (preferred first) used to run mutating commands *visibly*, so the
+# user always sees the exact command changing their system — no black box. All
+# of these take `-e <cmd>`. Alacritty is the Kiro default.
+_TERMINALS = ("alacritty", "xterm")
 
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 _snapshot_taken = False
@@ -90,14 +96,84 @@ def _snapshot_fish_config():
 
 
 def run_async(command, on_done, snapshot=False):
-    """Run a fish command off the UI thread; call on_done(Result)."""
+    """Run a *mutating* fish command off the UI thread; call on_done(Result).
+
+    The command runs in a visible terminal (Alacritty) so the user sees exactly
+    what is changing their system — never a black box. Read-only queries use
+    run_fish directly and stay silent.
+    """
 
     def worker():
         backup = ensure_snapshot() if snapshot else None
-        rc, out, err = run_fish(command)
-        on_done(Result(rc == 0, _clean(err or out), backup))
+        ok, message = _run_visibly(command)
+        on_done(Result(ok, message, backup))
 
     threading.Thread(target=worker, daemon=True).start()
+
+
+def _find_terminal():
+    """Return the first available terminal emulator, or None."""
+    for term in _TERMINALS:
+        if shutil.which(term):
+            return term
+    return None
+
+
+def _terminal_script(command, status_path):
+    """Build the fish script the terminal runs: echo the command, run it, save status."""
+    display = command.replace("\\", "\\\\").replace("'", "\\'")
+    return (
+        "set_color cyan\n"
+        'echo "Fish Tweak Tool is running this command on your system:"\n'
+        "set_color normal\n"
+        "echo\n"
+        f"echo '    {display}'\n"
+        "echo\n"
+        f"{command}\n"
+        "set -l _ftt_status $status\n"
+        f"echo $_ftt_status > '{status_path}'\n"
+        "echo\n"
+        "if test $_ftt_status -eq 0\n"
+        "    set_color green\n"
+        '    echo "Done (success). Press enter to close."\n'
+        "else\n"
+        "    set_color red\n"
+        '    echo "Failed (exit $_ftt_status). Press enter to close."\n'
+        "end\n"
+        "set_color normal\n"
+        "read\n"
+    )
+
+
+def _run_visibly(command):
+    """Run a mutating command in a visible terminal; return (ok, message).
+
+    Falls back to a silent in-process run only when no terminal is available.
+    """
+    log.log_info(f"$ {command}")
+    term = _find_terminal()
+    if not term:
+        rc, out, err = run_fish(command)
+        return rc == 0, _clean(err or out)
+
+    script_fd, script_path = tempfile.mkstemp(prefix="ftt-", suffix=".fish")
+    status_fd, status_path = tempfile.mkstemp(prefix="ftt-status-")
+    os.close(status_fd)
+    try:
+        with os.fdopen(script_fd, "w", encoding="utf-8") as f:
+            f.write(_terminal_script(command, status_path))
+        subprocess.run([term, "-e", "fish", script_path], timeout=1800)
+        with open(status_path, encoding="utf-8") as f:
+            rc = int(f.read().strip() or "1")
+        return rc == 0, ""
+    except (OSError, ValueError, subprocess.SubprocessError) as exc:
+        return False, str(exc)
+    finally:
+        for path in (script_path, status_path):
+            try:
+                os.unlink(path)
+            except OSError:
+                pass
 
 
 def _clean(text):
