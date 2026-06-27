@@ -23,6 +23,9 @@ import log  # noqa: E402
 # Cursor shapes offered in the Settings tab.
 _CURSOR_SHAPES = ["block", "line", "underscore"]
 
+# Light/dark variant for colour-theme-aware themes (Themes tab).
+_VARIANTS = ["dark", "light"]
+
 # The consensus must-have fisher plugins: repo → one-line description.
 _PLUGINS = [
     ("PatrickF1/fzf.fish", "Fuzzy search over history, files, git, processes"),
@@ -42,26 +45,6 @@ _PROMPT_FRAMEWORKS = [
 
 
 # ── Generic helpers ──────────────────────────────────────────────────────────
-
-
-def _placeholder(title, description):
-    """Return a centered placeholder page for a not-yet-built tab."""
-    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-    box.set_valign(Gtk.Align.CENTER)
-    box.set_halign(Gtk.Align.CENTER)
-
-    heading = Gtk.Label(label=title)
-    heading.add_css_class("placeholder-title")
-
-    detail = Gtk.Label(label=description)
-    detail.add_css_class("placeholder-detail")
-    detail.set_wrap(True)
-    detail.set_justify(Gtk.Justification.CENTER)
-    detail.set_max_width_chars(48)
-
-    box.append(heading)
-    box.append(detail)
-    return box
 
 
 def _notice(title, detail):
@@ -368,26 +351,32 @@ def _rgb(hex_color):
 
 
 def _swatch(background, foregrounds, width=190, height=72):
-    """Return a DrawingArea previewing a theme: background fill + foreground bars."""
+    """Return (DrawingArea, update_fn); update_fn(bg, fgs) recolours and redraws."""
     area = Gtk.DrawingArea()
     area.set_size_request(width, height)
+    state = {"bg": background, "fgs": foregrounds}
 
     def draw(_area, cr, w, h, _data=None):
-        bg = _rgb(background) if background else (0.12, 0.12, 0.12)
+        bg = _rgb(state["bg"]) if state["bg"] else (0.12, 0.12, 0.12)
         cr.set_source_rgb(*bg)
         cr.rectangle(0, 0, w, h)
         cr.fill()
-        if foregrounds:
+        if state["fgs"]:
             pad = 12
-            count = len(foregrounds)
+            count = len(state["fgs"])
             bar_w = (w - 2 * pad) / count
-            for i, color in enumerate(foregrounds):
+            for i, color in enumerate(state["fgs"]):
                 cr.set_source_rgb(*_rgb(color))
                 cr.rectangle(pad + i * bar_w + 2, h * 0.45, bar_w - 4, h * 0.35)
                 cr.fill()
 
+    def update(bg, fgs):
+        state["bg"] = bg
+        state["fgs"] = fgs
+        area.queue_draw()
+
     area.set_draw_func(draw)
-    return area
+    return area, update
 
 
 class ThemesTab:
@@ -396,7 +385,9 @@ class ThemesTab:
     def __init__(self):
         self._prefs = ftt_config.load_prefs()
         self._current = self._prefs.get("current_theme")
+        self._variant = self._prefs.get("theme_variant", "dark")
         self._cards = {}
+        self._swatch_updaters = {}
         self._status = None
         self._busy = False
         self.widget = self._build()
@@ -415,6 +406,15 @@ class ThemesTab:
         spacer = Gtk.Box()
         spacer.set_hexpand(True)
         header.append(spacer)
+
+        variant_label = Gtk.Label(label="Variant:")
+        variant_label.set_tooltip_text("Light or dark for themes that ship both (catppuccin, ayu, …)")
+        header.append(variant_label)
+        self._variant_dropdown = Gtk.DropDown.new_from_strings(_VARIANTS)
+        self._variant_dropdown.set_selected(_VARIANTS.index(self._variant) if self._variant in _VARIANTS else 0)
+        self._variant_dropdown.connect("notify::selected", self._on_variant_changed)
+        header.append(self._variant_dropdown)
+
         reset = Gtk.Button(label="Reset to default")
         reset.connect("clicked", lambda _b: self._apply("default"))
         header.append(reset)
@@ -444,14 +444,16 @@ class ThemesTab:
         return scroller
 
     def _make_card(self, name):
-        background, foregrounds = ftt_theme.parse_theme(name)
+        background, foregrounds = ftt_theme.parse_theme(name, self._variant)
         button = Gtk.Button()
         button.add_css_class("theme-card")
         if name == self._current:
             button.add_css_class("theme-current")
 
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        content.append(_swatch(background, foregrounds))
+        swatch, update = _swatch(background, foregrounds)
+        self._swatch_updaters[name] = update
+        content.append(swatch)
         label = Gtk.Label(label=name)
         label.add_css_class("plugin-name")
         label.set_ellipsize(3)  # Pango.EllipsizeMode.END
@@ -459,6 +461,14 @@ class ThemesTab:
         button.set_child(content)
         button.connect("clicked", lambda _b, n=name: self._apply(n))
         return button
+
+    def _on_variant_changed(self, dropdown, _param):
+        self._variant = _VARIANTS[dropdown.get_selected()]
+        self._prefs["theme_variant"] = self._variant
+        ftt_config.save_prefs(self._prefs)
+        for name, update in self._swatch_updaters.items():
+            background, foregrounds = ftt_theme.parse_theme(name, self._variant)
+            update(background, foregrounds)
 
     def _apply(self, name):
         if self._busy:
@@ -469,7 +479,7 @@ class ThemesTab:
         def on_done(result):
             GLib.idle_add(self._apply_finished, name, result)
 
-        ftt_theme.apply_async(name, on_done, snapshot=True)
+        ftt_theme.apply_async(name, on_done, snapshot=True, color_theme=self._variant)
 
     def _apply_finished(self, name, result):
         self._busy = False

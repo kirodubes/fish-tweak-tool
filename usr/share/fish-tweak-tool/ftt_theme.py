@@ -24,6 +24,7 @@ _SWATCH_KEYS = [
 ]
 
 _HEX_RE = re.compile(r"^[0-9a-fA-F]{6}$|^[0-9a-fA-F]{3}$")
+_AWARE_RE = re.compile(r"^\[(dark|light|unknown)\]")
 
 
 def list_themes():
@@ -43,36 +44,67 @@ def theme_file(name):
     return None
 
 
-def parse_theme(name):
-    """Return (background_hex, [foreground_hex, ...]) for the swatch."""
+def parse_theme(name, variant="dark"):
+    """Return (background_hex, [foreground_hex, ...]) for the swatch.
+
+    Colour-theme-aware files split colours into [light]/[dark] sections; the
+    requested variant is used, falling back to dark/light/unknown, then to the
+    file's top-level colours for non-aware themes.
+    """
     path = theme_file(name)
     if not path:
         return None, []
 
-    background = None
-    colors = {}
+    sections = {None: {"bg": None, "colors": {}}}
+    current = None
     with open(path, encoding="utf-8") as f:
         for raw in f:
             line = raw.strip()
+            match = _AWARE_RE.match(line)
+            if match:
+                current = match.group(1)
+                sections.setdefault(current, {"bg": None, "colors": {}})
+                continue
+            section = sections[current]
             if line.startswith("# preferred_background:"):
-                background = _to_hex(line.split(":", 1)[1].strip())
+                section["bg"] = _to_hex(line.split(":", 1)[1].strip())
             elif line and not line.startswith("#"):
                 parts = line.split()
                 value = _first_hex(parts[1:])
                 if value:
-                    colors[parts[0]] = value
+                    section["colors"][parts[0]] = value
 
-    foregrounds = [colors[k] for k in _SWATCH_KEYS if k in colors]
-    return background, foregrounds
+    chosen = sections[None]
+    for key in (variant, "dark", "light", "unknown", None):
+        candidate = sections.get(key)
+        if candidate and (candidate["colors"] or candidate["bg"]):
+            chosen = candidate
+            break
+
+    foregrounds = [chosen["colors"][k] for k in _SWATCH_KEYS if k in chosen["colors"]]
+    return chosen["bg"], foregrounds
 
 
-def apply_async(name, on_done, snapshot=False):
+def is_color_theme_aware(name):
+    """Return True if the theme has light/dark variant sections (needs --color-theme)."""
+    path = theme_file(name)
+    if not path:
+        return False
+    with open(path, encoding="utf-8") as f:
+        return any(_AWARE_RE.match(line) for line in f)
+
+
+def apply_async(name, on_done, snapshot=False, color_theme="dark"):
     """Apply and persist a theme off the UI thread; call on_done(Result).
 
     `fish_config theme save <name>` gates on an interactive "Overwrite? [y/N]"
-    read, so piping `y` confirms it non-interactively.
+    read, so piping `y` confirms it. Color-theme-aware themes (catppuccin, ayu,
+    …) also need an explicit light/dark choice — fish normally reads it from the
+    terminal, which is unavailable under `fish -c`, so we pass --color-theme.
+    Passing that flag to a non-aware theme errors, so it is added only when needed.
     """
-    ftt_fisher.run_async(f"echo y | fish_config theme save {name}", on_done, snapshot)
+    flag = f"--color-theme={color_theme} " if is_color_theme_aware(name) else ""
+    ftt_fisher.run_async(f"echo y | fish_config theme save {flag}{name}", on_done, snapshot)
 
 
 def _first_hex(tokens):

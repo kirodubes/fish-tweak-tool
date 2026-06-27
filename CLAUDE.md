@@ -28,7 +28,8 @@ usr/share/fish-tweak-tool/
 ├── ftt_fisher.py        # M1 orchestration: fisher install/remove + snapshot
 ├── ftt_prompt.py        # M1 built-in prompts: fish_config prompt save
 ├── ftt_theme.py         # M2 theme gallery: list/parse .theme + theme save
-├── ftt_config.py        # App preferences (window size, current_theme)
+├── ftt_managed.py       # M3 managed block: greeting + cursor in config.fish
+├── ftt_config.py        # App preferences (window size, current_theme, greeting, cursor)
 ├── log.py               # Logging: log_section / log_info / log_success / ...
 └── ftt.css              # GTK4 stylesheet
 ```
@@ -78,6 +79,7 @@ wrong silently clobbers user settings:
 - **M2** — Theme gallery from `fish_config theme`. **Done** (card gallery,
   swatches, apply, current indicator, reset).
 - **M3** — Greeting / cursor knobs + backup-restore of `~/.config/fish/`.
+  **Done** (managed-block greeting + cursor, backup/restore panel).
 - **M4** — Presets (one-click Kiro-default / Minimal / Tide bundles).
 - **M5** — nemesis_repo package + ATT deep-link.
 

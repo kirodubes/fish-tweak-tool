@@ -23,6 +23,11 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   25 bundled colour themes, each with a parsed swatch (background + foreground
   bars), click-to-apply (`fish_config theme save`), a current-theme indicator,
   and a **Reset to default** button.
+- **M3 (settings + backup/restore).** The Settings tab is now live: greeting
+  (keep / off / fastfetch / custom text), cursor shape (block / line /
+  underscore), and a backup/restore panel (back up now, restore any snapshot).
+  Greeting + cursor are written into FTT's **managed block** in `config.fish`,
+  below the `source` line, so they load last and always win the load-order rule.
 
 ### Technical Details
 
@@ -68,6 +73,28 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   `prefs.json` (`current_theme`) and marks that card. Swatches are Cairo
   `DrawingArea`s. **Test note:** render verification uses a throwaway
   `NON_UNIQUE` app id — never `pkill` the user's running instance.
+- **M2 fix:** color-theme-aware themes (catppuccin/ayu/solarized/… — those with
+  `[dark]`/`[light]` sections) failed with "$fish_terminal_color_theme not yet
+  initialized" because `fish -c` can't read the terminal's light/dark. Now
+  `apply_async` detects awareness from the `.theme` file and adds
+  `--color-theme=dark` only for those (passing it to a non-aware theme errors).
+  Also bumped the status-line font (12→14px) for readability. Added a
+  **Dark / Light variant selector** to the Themes tab header (persisted as
+  `theme_variant`) so aware themes can be applied in either variant. Swatches
+  are now **variant-aware**: `parse_theme` reads colours from the matching
+  `[light]`/`[dark]` section, and switching the dropdown live-redraws every
+  card (aware themes flip palettes, non-aware stay put). Swatch DrawingAreas
+  gained an `update(bg, fgs)` + `queue_draw` path for the live recolour.
+- **M3 internals:** new `ftt_managed.py` owns the managed block — a marker-
+  delimited region (`# >>> fish-tweak-tool managed block >>>` … `<<<`) that is
+  fully regenerated from a settings dict and inserted/replaced idempotently
+  (one block no matter how many applies). prefs.json holds the UI state
+  (`greeting`, `cursor`); the block is the source of truth for fish. Greeting is
+  always emitted as a `function fish_greeting` (overrides the payload's, which a
+  `set -U` could not); custom text is fish single-quote escaped. `ftt_fisher.py`
+  gained `snapshot_now` / `list_backups` / `restore_backup`; restore snapshots
+  the current config first. Removed the now-unused `_placeholder` helper (all
+  four tabs are real).
 
 ### Files Modified
 
@@ -79,6 +106,7 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
 - `usr/share/fish-tweak-tool/ftt_fisher.py` (new; M1 orchestration core)
 - `usr/share/fish-tweak-tool/ftt_prompt.py` (new; built-in prompt wrapper)
 - `usr/share/fish-tweak-tool/ftt_theme.py` (new; M2 theme gallery backend)
+- `usr/share/fish-tweak-tool/ftt_managed.py` (new; M3 managed-block writer)
 - `usr/share/fish-tweak-tool/ftt_config.py` (new)
 - `usr/share/fish-tweak-tool/log.py` (new)
 - `usr/share/fish-tweak-tool/ftt.css` (new; plugin row + status styles)
