@@ -6,6 +6,13 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
 
 ### What Changed
 
+- **Header bar with version · ♥ Support · Quit** (matches fastfetch-tweak-tool).
+  Moved the title into a content header above the tabs: "Fish Tweak Tool" on the
+  left, then a `fish v<version>` label, a pink **♥ Support** button (opens a
+  Support-Kiro dialog with the funding channels — GitHub Sponsors / Ko-fi /
+  Patreon / YouTube / PayPal), and a **Quit** button. The window titlebar is now a
+  plain `Gtk.HeaderBar` showing the window title + controls.
+
 - **M5 — Package + ATT integration.** Added `alacritty` as an optdepend on the
   package (`alacritty: shows the exact command for each change in a terminal`),
   since the visible-command UX runs in Alacritty (graceful fallback otherwise).

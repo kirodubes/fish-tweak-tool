@@ -78,9 +78,7 @@ class Main(Gtk.ApplicationWindow):
 
     def _build_headerbar(self):
         header = Gtk.HeaderBar()
-        title = Gtk.Label(label="Fish Tweak Tool")
-        title.set_name("title")
-        header.set_title_widget(title)
+        header.set_show_title_buttons(True)
         self.set_titlebar(header)
 
     def _load_css(self):

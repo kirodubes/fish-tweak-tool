@@ -979,16 +979,103 @@ class PresetsTab(_StatusMixin):
 # ── Entry point ──────────────────────────────────────────────────────────────
 
 
+# Funding channels — GitHub Sponsors first (~100% payout). Keep in sync with
+# kiro-website .github/FUNDING.yml if those change.
+_FUNDING = [
+    ("GitHub Sponsors", "https://github.com/sponsors/erikdubois", "best value — almost all goes to the project"),
+    ("Ko-fi", "https://ko-fi.com/erikdubois", "buy a coffee — one-off tip"),
+    ("Patreon", "https://www.patreon.com/kiroproject", "membership tiers + perks"),
+    ("YouTube membership", "https://www.youtube.com/@ErikDubois/join", "join on YouTube"),
+    ("PayPal", "https://www.paypal.me/erikdubois", "direct one-off"),
+]
+
+
+def _open_url(parent, url):
+    Gtk.UriLauncher.new(url).launch(parent, None, None)
+
+
+def _show_support_dialog(window):
+    dlg = Gtk.Window(title="Support Kiro", transient_for=window, modal=True)
+    dlg.set_default_size(440, -1)
+    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+    for side in ("start", "end", "top", "bottom"):
+        getattr(box, f"set_margin_{side}")(18)
+
+    heading = Gtk.Label(xalign=0)
+    heading.set_markup("<b>Support Kiro</b>")
+    box.append(heading)
+
+    intro = Gtk.Label(xalign=0)
+    intro.add_css_class("info-label")
+    intro.set_wrap(True)
+    intro.set_max_width_chars(52)
+    intro.set_label(
+        "Kiro and its tools are built by one person, for the community — and kept free. "
+        "If Fish Tweak Tool saves you time, a little support keeps the work going. "
+        "Thank you for being here."
+    )
+    box.append(intro)
+
+    for name, url, note in _FUNDING:
+        btn = Gtk.Button()
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        label = Gtk.Label(xalign=0)
+        label.set_markup(f"<b>{name}</b>")
+        sub = Gtk.Label(label=note, xalign=0)
+        sub.add_css_class("info-label")
+        content.append(label)
+        content.append(sub)
+        btn.set_child(content)
+        btn.connect("clicked", lambda _w, u=url: _open_url(dlg, u))
+        box.append(btn)
+
+    close = Gtk.Button(label="Close")
+    close.set_halign(Gtk.Align.END)
+    close.connect("clicked", lambda _w: dlg.close())
+    box.append(close)
+
+    dlg.set_child(box)
+    dlg.present()
+
+
 def build(window, fish_version):
-    """Populate the window with the tabbed shell."""
+    """Populate the window with a header bar and the tabbed shell."""
+    root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+
+    header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+    header.set_margin_start(12)
+    header.set_margin_end(12)
+    header.set_margin_top(10)
+    header.set_margin_bottom(8)
+    title = Gtk.Label(label="Fish Tweak Tool", xalign=0)
+    title.set_name("title")
+    title.set_hexpand(True)
+    ver_text = f"fish v{fish_version}" if fish_version[:1].isdigit() else f"fish {fish_version}"
+    lbl_version = Gtk.Label(label=ver_text)
+    lbl_version.add_css_class("info-label")
+    lbl_version.set_valign(Gtk.Align.CENTER)
+    btn_support = Gtk.Button(label="♥ Support")
+    btn_support.set_tooltip_text("Support Kiro's development")
+    btn_support.add_css_class("support-button")
+    btn_support.connect("clicked", lambda _w: _show_support_dialog(window))
+    btn_quit = Gtk.Button(label="Quit")
+    btn_quit.connect("clicked", lambda _w: window.close())
+    header.append(title)
+    header.append(lbl_version)
+    header.append(btn_support)
+    header.append(btn_quit)
+    root.append(header)
+    root.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+
     notebook = Gtk.Notebook()
     notebook.set_scrollable(True)
-
+    notebook.set_vexpand(True)
     notebook.append_page(PresetsTab().widget, Gtk.Label(label="Presets"))
     notebook.append_page(PluginsTab().widget, Gtk.Label(label="Plugins"))
     notebook.append_page(PromptTab().widget, Gtk.Label(label="Prompt"))
     notebook.append_page(ThemesTab().widget, Gtk.Label(label="Themes"))
     notebook.append_page(SettingsTab().widget, Gtk.Label(label="Settings"))
+    root.append(notebook)
 
-    window.set_child(notebook)
+    window.set_child(root)
     log.debug_print(f"GUI built (fish {fish_version})")
