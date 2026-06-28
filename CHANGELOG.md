@@ -105,10 +105,22 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   guarded by `type -q starship`). Switching to any other prompt clears that line.
   Its info panel links to <https://github.com/starship/starship> — and the
   Tide/Hydro/Pure panels now carry a github.com link to their repo too (derived
-  from each framework's key). `ftt_prompt`'s
-  command builder was exposed as `build_command` so the apply path can coordinate
-  the managed-block write with the prompt-switch command. Removed the old "Starship
-  coming" note.
+  from each framework's key). The Starship panel also has a **preset gallery** —
+  cards each showing a **live colour-rendered preview** of that preset's prompt
+  (`STARSHIP_CONFIG=<preset> starship prompt`, ANSI → Pango), click a card to apply.
+  Presets are **Kiro default** (the `kiro-starship` package's
+  `/usr/share/kiro/starship/starship.toml` payload, when installed) plus Starship's
+  own (`starship preset --list`); applying backs up `~/.config/starship.toml` then
+  writes the chosen one (`starship preset <name> -o …`, or copies the Kiro default).
+  `ftt_prompt`'s command builder was exposed as `build_command` so the apply path
+  can coordinate the managed-block write with the prompt-switch command. Removed the
+  old "Starship coming" note.
+
+- **ANSI → Pango converter now handles backgrounds + 256-colour.** Extended
+  `_ansi_to_markup` (built-in-prompt and starship preview cards) to emit `background`
+  spans (`48;2` true-colour, `48;5;N`/`40-47`/`100-107`) and 256-colour foregrounds
+  (`38;5;N`), so powerline presets show their segment backgrounds; non-colour
+  escapes (cursor/erase) are stripped. Closes the deferred 256-colour/background gap.
 
 - **Prompt tab redesigned around an interchangeable block.** The area below the
   radios now swaps with the selection: **Built-in** shows a **card gallery** of

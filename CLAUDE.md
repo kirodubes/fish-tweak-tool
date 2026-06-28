@@ -87,7 +87,13 @@ wrong silently clobbers user settings:
   `extra` binary, installed via the visible-terminal offer and enabled with
   `starship init fish | source` in the managed block (the `starship` flag in
   `settings_from_prefs`/`render_block`); the apply path uses `ftt_prompt.build_command`
-  to coordinate the block write with the prompt-switch command. The block below the radios is an interchangeable `Gtk.Stack`:
+  to coordinate the block write with the prompt-switch command. The Starship panel
+  also offers a **preset gallery** — cards with a live colour-rendered preview
+  (`STARSHIP_CONFIG=<preset> starship prompt` → `_ansi_to_markup`, which handles
+  fg/bg true-colour + 256), click to apply. Presets: Kiro default from
+  `kiro-starship`'s `/usr/share/kiro/starship/starship.toml` payload + `starship
+  preset --list`; applying backs up and writes `~/.config/starship.toml`.
+  The block below the radios is an interchangeable `Gtk.Stack`:
   **Built-in** → a **card gallery** of fish styles with live colour samples
   rendered from `fish_config prompt show` (ANSI → Pango via `_ansi_to_markup`);
   each framework → its own info panel. No standalone "Default" radio — the

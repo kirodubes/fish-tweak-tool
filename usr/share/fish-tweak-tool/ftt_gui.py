@@ -82,6 +82,39 @@ _STARSHIP_INFO = (
     "github.com/starship/starship</a>."
 )
 
+# Starship config + the Kiro default shipped by the kiro-starship package (/etc/skel).
+_STARSHIP_CONFIG = os.path.expanduser("~/.config/starship.toml")
+_KIRO_STARSHIP_TOML = "/usr/share/kiro/starship/starship.toml"
+_KIRO_PRESET = "Kiro default"
+
+
+def _starship_presets():
+    """Preset names: 'Kiro default' (if kiro-starship is installed) + starship's own presets."""
+    names = [_KIRO_PRESET] if os.path.isfile(_KIRO_STARSHIP_TOML) else []
+    if shutil.which("starship"):
+        rc, out, _ = ftt_fisher.run_fish("starship preset --list")
+        if rc == 0:
+            names += [line.strip() for line in out.splitlines() if line.strip()]
+    return names
+
+
+def _starship_preview(name):
+    """Render a starship preset's prompt to ANSI text for a card preview, or '' on failure."""
+    if name == _KIRO_PRESET:
+        cmd = f"env STARSHIP_CONFIG='{_KIRO_STARSHIP_TOML}' starship prompt"
+    else:
+        tmp = f"/tmp/ftt-starship-{name}.toml"
+        cmd = f"starship preset {name} -o '{tmp}'; and env STARSHIP_CONFIG='{tmp}' starship prompt"
+    rc, out, _ = ftt_fisher.run_fish(cmd)
+    return out if rc == 0 else ""
+
+
+def _starship_card_markup(raw):
+    """Markup for a starship preset preview — the first rendered prompt line."""
+    cleaned = _NON_SGR_RE.sub("", raw)
+    line = next((ln for ln in cleaned.splitlines() if ln.strip()), "")
+    return f"<tt><span background='#1d1f21'> {_ansi_to_markup(line)} </span></tt>"
+
 
 # ── Generic helpers ──────────────────────────────────────────────────────────
 
@@ -323,6 +356,21 @@ _ANSI_BASIC = {
     94: "#729fcf", 95: "#ad7fa8", 96: "#34e2e2", 97: "#eeeeec",
 }
 _ANSI_RE = re.compile(r"\x1b\[([0-9;]*)m")
+# CSI sequences that aren't colour (cursor/erase like \x1b[J, \x1b[2K) — strip them.
+_NON_SGR_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-ln-z]")
+_XTERM_STEPS = (0, 95, 135, 175, 215, 255)
+
+
+def _xterm256(n):
+    """Map an xterm-256 colour index to '#rrggbb'."""
+    if n < 16:
+        return _ANSI_BASIC.get(30 + n if n < 8 else 90 + n - 8, "#000000")
+    if n < 232:
+        n -= 16
+        r, g, b = _XTERM_STEPS[n // 36], _XTERM_STEPS[(n // 6) % 6], _XTERM_STEPS[n % 6]
+        return f"#{r:02x}{g:02x}{b:02x}"
+    v = 8 + 10 * (n - 232)
+    return f"#{v:02x}{v:02x}{v:02x}"
 
 
 def _ansi_span(text, state):
@@ -330,6 +378,8 @@ def _ansi_span(text, state):
     attrs = []
     if state["fg"]:
         attrs.append(f"foreground='{state['fg']}'")
+    if state["bg"]:
+        attrs.append(f"background='{state['bg']}'")
     if state["bold"]:
         attrs.append("font_weight='bold'")
     return f"<span {' '.join(attrs)}>{esc}</span>" if attrs else esc
@@ -341,24 +391,31 @@ def _ansi_apply(codes, state):
     while i < len(parts):
         code = parts[i]
         if code == 0:
-            state.update(fg=None, bold=False)
+            state.update(fg=None, bg=None, bold=False)
         elif code == 1:
             state["bold"] = True
         elif code == 22:
             state["bold"] = False
         elif code == 39:
             state["fg"] = None
-        elif code == 38 and parts[i + 1 : i + 2] == [2] and i + 4 < len(parts):
-            state["fg"] = "#{:02x}{:02x}{:02x}".format(parts[i + 2], parts[i + 3], parts[i + 4])
+        elif code == 49:
+            state["bg"] = None
+        elif code in (38, 48) and parts[i + 1 : i + 2] == [2] and i + 4 < len(parts):
+            state["fg" if code == 38 else "bg"] = "#{:02x}{:02x}{:02x}".format(*parts[i + 2 : i + 5])
             i += 4
+        elif code in (38, 48) and parts[i + 1 : i + 2] == [5] and i + 2 < len(parts):
+            state["fg" if code == 38 else "bg"] = _xterm256(parts[i + 2])
+            i += 2
         elif code in _ANSI_BASIC:
             state["fg"] = _ANSI_BASIC[code]
+        elif 40 <= code <= 47 or 100 <= code <= 107:
+            state["bg"] = _ANSI_BASIC[code - 10]
         i += 1
 
 
 def _ansi_to_markup(text):
-    """Convert ANSI-coloured terminal text to Pango markup (foreground + bold)."""
-    state = {"fg": None, "bold": False}
+    """Convert ANSI-coloured terminal text to Pango markup (fg/bg + bold)."""
+    state = {"fg": None, "bg": None, "bold": False}
     out = []
     pos = 0
     for match in _ANSI_RE.finditer(text):
@@ -401,6 +458,9 @@ class PromptTab(_StatusMixin):
         self._selected_builtin = None
         self._stack = None
         self._apply_btn = None
+        self._starship_cards = {}
+        self._starship_preview_labels = {}
+        self._current_starship = None
         self._status = None
         self._status_timeout = 0
         self.widget = self._build()
@@ -500,7 +560,7 @@ class PromptTab(_StatusMixin):
             info = _FRAMEWORK_INFO.get(key, _FRAMEWORK_INFO_DEFAULT)
             info += f"\n\n<b>More:</b> <a href='https://github.com/{key}'>github.com/{key}</a>"
             self._stack.add_named(self._info_page(info), f"framework:{key}")
-        self._stack.add_named(self._info_page(_STARSHIP_INFO), "starship")
+        self._stack.add_named(self._build_starship_page(), "starship")
         return self._stack
 
     def _info_page(self, markup):
@@ -510,6 +570,97 @@ class PromptTab(_StatusMixin):
         info.set_markup(markup)
         info.connect("activate-link", _open_link)  # open repo/doc links in the browser
         return info
+
+    def _build_starship_page(self):
+        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        page.append(self._info_page(_STARSHIP_INFO))
+
+        names = _starship_presets()
+        if not names:
+            return page
+
+        page.append(
+            _intro(
+                "Click a preset to apply it — writes ~/.config/starship.toml (backed up first). "
+                "Some presets need a Nerd Font to render their icons."
+            )
+        )
+        self._current_starship = self._prefs.get("current_starship_preset")
+        flow = Gtk.FlowBox()
+        flow.set_selection_mode(Gtk.SelectionMode.NONE)
+        flow.set_max_children_per_line(3)
+        flow.set_column_spacing(10)
+        flow.set_row_spacing(10)
+        flow.set_homogeneous(True)
+        for name in names:
+            card = self._make_starship_card(name)
+            self._starship_cards[name] = card
+            flow.append(card)
+        page.append(flow)
+        self._load_starship_previews(names)
+        return page
+
+    def _make_starship_card(self, name):
+        button = Gtk.Button()
+        button.add_css_class("theme-card")
+        if name == self._current_starship:
+            button.add_css_class("theme-current")
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        preview = Gtk.Label(xalign=0)
+        preview.add_css_class("theme-preview")
+        preview.set_ellipsize(3)  # Pango.EllipsizeMode.END
+        preview.set_max_width_chars(34)
+        preview.set_markup(f"<tt><span background='#1d1f21'> {GLib.markup_escape_text(name)} … </span></tt>")
+        self._starship_preview_labels[name] = preview
+        content.append(preview)
+        label = Gtk.Label(label=name, xalign=0)
+        label.add_css_class("plugin-name")
+        label.set_ellipsize(3)
+        content.append(label)
+        button.set_child(content)
+        button.connect("clicked", lambda _b, n=name: self._apply_starship_preset(n))
+        return button
+
+    def _load_starship_previews(self, names):
+        def worker():
+            for name in names:
+                markup = _starship_card_markup(_starship_preview(name))
+                GLib.idle_add(self._set_starship_preview, name, markup)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _set_starship_preview(self, name, markup):
+        label = self._starship_preview_labels.get(name)
+        if label is not None:
+            label.set_markup(markup)
+        return False
+
+    def _apply_starship_preset(self, name):
+        if name == _KIRO_PRESET:
+            apply_cmd = f"cp -f '{_KIRO_STARSHIP_TOML}' '{_STARSHIP_CONFIG}'"
+        else:
+            apply_cmd = f"starship preset {name} -o '{_STARSHIP_CONFIG}'"
+        # Back up an existing toml first, then write the chosen preset.
+        backup = f"test -f '{_STARSHIP_CONFIG}'; and cp -f '{_STARSHIP_CONFIG}' '{_STARSHIP_CONFIG}.ftt-bak'"
+        self._set_status(f"Applying starship preset '{name}'…")
+
+        def on_done(result):
+            GLib.idle_add(self._starship_preset_done, name, result)
+
+        ftt_fisher.run_async(f"{backup}; {apply_cmd}", on_done, snapshot=False)
+
+    def _starship_preset_done(self, name, result):
+        if result.ok:
+            if self._current_starship in self._starship_cards:
+                self._starship_cards[self._current_starship].remove_css_class("theme-current")
+            if name in self._starship_cards:
+                self._starship_cards[name].add_css_class("theme-current")
+            self._current_starship = name
+            self._prefs = ftt_config.update_prefs({"current_starship_preset": name})
+            self._set_status(f"Starship preset '{name}' applied. Open a new shell to see it.")
+        else:
+            self._set_status(f"Could not apply preset: {result.message or 'see terminal'}", error=True)
+        return False
 
     def _build_gallery_page(self):
         page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
