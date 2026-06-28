@@ -386,8 +386,8 @@ class PromptTab(_StatusMixin):
         self._cards = {}
         self._sample_labels = {}
         self._selected_builtin = None
+        self._stack = None
         self._apply_btn = None
-        self._info_label = None
         self._status = None
         self._status_timeout = 0
         self.widget = self._build()
@@ -412,32 +412,19 @@ class PromptTab(_StatusMixin):
     def _on_radio_toggled(self, button, rid):
         if not button.get_active():
             return
-        self._info_label.set_markup(self._info_for(rid))
+        if self._stack is not None:
+            self._stack.set_visible_child_name(rid)
         self._refresh_card_highlight()
 
     def _refresh_card_highlight(self):
-        # A card is only marked current when "Built-in style" is the active choice,
-        # so a built-in card never looks selected while Default/a framework is.
+        # A card is only marked current when "Built-in" is the active choice, so a
+        # built-in card never looks selected while a framework is.
         active = self._radios["builtin"].get_active()
         for name, card in self._cards.items():
             if active and name == self._selected_builtin:
                 card.add_css_class("theme-current")
             else:
                 card.remove_css_class("theme-current")
-
-    def _info_for(self, rid):
-        if rid.startswith("framework:"):
-            return _FRAMEWORK_INFO.get(rid.split(":", 1)[1], _FRAMEWORK_INFO_DEFAULT)
-        if rid == "builtin":
-            return (
-                "<b>Built-in styles</b> ship with fish — zero dependencies. Click a "
-                "card below to pick one, then Apply; fish saves it as your prompt via "
-                "<tt>fish_config prompt save</tt>."
-            )
-        return (
-            "<b>Default</b> — fish's built-in prompt, no plugin. Applying removes any "
-            "framework or custom prompt and returns to the plain fish look."
-        )
 
     def _build(self):
         fisher = ftt_fisher.is_fisher_available()
@@ -458,26 +445,11 @@ class PromptTab(_StatusMixin):
 
         group = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         group.add_css_class("plugin-list")
-        self._add_radio(group, "default", "Default — fish's built-in prompt")
+        self._add_radio(group, "builtin", "Built-in — fish's bundled styles", sensitive=bool(self._builtin_names))
         for key, _spec, desc in _PROMPT_FRAMEWORKS:
             name = key.rsplit("/", 1)[-1].capitalize()
             self._add_radio(group, f"framework:{key}", f"{name} — {desc}", sensitive=fisher)
-
-        self._add_radio(group, "builtin", "Built-in style — pick a card below", sensitive=bool(self._builtin_names))
         box.append(group)
-
-        if self._builtin_names:
-            flow = Gtk.FlowBox()
-            flow.set_selection_mode(Gtk.SelectionMode.NONE)
-            flow.set_max_children_per_line(4)
-            flow.set_column_spacing(10)
-            flow.set_row_spacing(10)
-            flow.set_homogeneous(True)
-            for name in self._builtin_names:
-                card = self._make_card(name)
-                self._cards[name] = card
-                flow.append(card)
-            box.append(flow)
 
         self._apply_btn = Gtk.Button(label="Apply prompt")
         self._apply_btn.add_css_class("suggested-action")
@@ -495,11 +467,7 @@ class PromptTab(_StatusMixin):
         box.append(starship_note)
 
         box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
-        self._info_label = Gtk.Label(xalign=0, yalign=0)
-        self._info_label.add_css_class("info-panel")
-        self._info_label.set_wrap(True)
-        self._info_label.set_vexpand(True)
-        box.append(self._info_label)
+        box.append(self._build_stack())
 
         box.append(self._status)
         self._restore_selection()
@@ -510,6 +478,46 @@ class PromptTab(_StatusMixin):
         scroller.set_vexpand(True)
         scroller.set_child(box)
         return scroller
+
+    def _build_stack(self):
+        # One interchangeable block: the built-in gallery, or a framework's info.
+        self._stack = Gtk.Stack()
+        self._stack.set_hhomogeneous(False)
+        self._stack.set_vhomogeneous(False)
+        self._stack.add_named(self._build_gallery_page(), "builtin")
+        for key, _spec, _desc in _PROMPT_FRAMEWORKS:
+            info = Gtk.Label(xalign=0, yalign=0)
+            info.add_css_class("info-panel")
+            info.set_wrap(True)
+            info.set_markup(_FRAMEWORK_INFO.get(key, _FRAMEWORK_INFO_DEFAULT))
+            self._stack.add_named(info, f"framework:{key}")
+        return self._stack
+
+    def _build_gallery_page(self):
+        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        page.append(
+            _intro(
+                "Built-in styles ship with fish — zero dependencies. Click a card, then "
+                "Apply. The 'default' card is fish's plain prompt."
+            )
+        )
+        if not self._builtin_names:
+            note = _intro("No built-in prompts found.")
+            note.add_css_class("muted")
+            page.append(note)
+            return page
+        flow = Gtk.FlowBox()
+        flow.set_selection_mode(Gtk.SelectionMode.NONE)
+        flow.set_max_children_per_line(4)
+        flow.set_column_spacing(10)
+        flow.set_row_spacing(10)
+        flow.set_homogeneous(True)
+        for name in self._builtin_names:
+            card = self._make_card(name)
+            self._cards[name] = card
+            flow.append(card)
+        page.append(flow)
+        return page
 
     def _make_card(self, name):
         button = Gtk.Button()
@@ -550,44 +558,54 @@ class PromptTab(_StatusMixin):
         return False
 
     def _restore_selection(self):
-        current = self._prefs.get("current_prompt", "default")
-        radio = self._radios.get(current)
+        # Which built-in card is selected (used whenever Built-in is active).
+        card = self._prefs.get("current_builtin")
+        if self._prefs.get("current_prompt") == "default":
+            card = "default"
+        if card not in self._builtin_names:
+            card = "default" if "default" in self._builtin_names else (
+                self._builtin_names[0] if self._builtin_names else None
+            )
+        self._selected_builtin = card
+
+        # A framework prompt selects its radio; anything else falls back to Built-in.
+        saved = self._prefs.get("current_prompt", "builtin")
+        radio = self._radios.get(saved)
         if radio is None or not radio.get_sensitive():
-            radio = self._radios["default"]
-        saved = self._prefs.get("current_builtin")
-        if saved not in self._builtin_names:
-            saved = self._builtin_names[0] if self._builtin_names else None
-        self._selected_builtin = saved
+            radio = self._radios["builtin"]
         radio.set_active(True)
+        rid = next((r for r, b in self._radios.items() if b.get_active()), "builtin")
+        self._stack.set_visible_child_name(rid)
         self._refresh_card_highlight()
 
     def _apply_prompt(self, _btn):
-        rid = next((r for r, b in self._radios.items() if b.get_active()), "default")
+        rid = next((r for r, b in self._radios.items() if b.get_active()), "builtin")
         builtin_name = None
-        if rid == "builtin":
+        if rid.startswith("framework:"):
+            choice = ("framework", self._specs[rid.split(":", 1)[1]])
+            prompt_key = rid
+        else:
             if not self._selected_builtin:
                 self._set_status("Pick a built-in style first.", error=True)
                 return
             builtin_name = self._selected_builtin
-            choice = ("builtin", builtin_name)
-        elif rid.startswith("framework:"):
-            choice = ("framework", self._specs[rid.split(":", 1)[1]])
-        else:
-            choice = ("default",)
+            # The 'default' card is fish's plain prompt — a full reset, not a save.
+            choice = ("default",) if builtin_name == "default" else ("builtin", builtin_name)
+            prompt_key = "default" if builtin_name == "default" else "builtin"
 
         self._apply_btn.set_sensitive(False)
         self._set_status("Applying prompt…")
         frameworks = [(key, spec) for key, spec, _ in _PROMPT_FRAMEWORKS]
 
         def on_done(result):
-            GLib.idle_add(self._prompt_applied, rid, builtin_name, result)
+            GLib.idle_add(self._prompt_applied, prompt_key, builtin_name, result)
 
         ftt_prompt.set_prompt_async(choice, frameworks, on_done, snapshot=True)
 
-    def _prompt_applied(self, rid, builtin_name, result):
+    def _prompt_applied(self, prompt_key, builtin_name, result):
         self._apply_btn.set_sensitive(True)
         if result.ok:
-            updates = {"current_prompt": rid}
+            updates = {"current_prompt": prompt_key}
             if builtin_name is not None:
                 updates["current_builtin"] = builtin_name
             self._prefs = ftt_config.update_prefs(updates)

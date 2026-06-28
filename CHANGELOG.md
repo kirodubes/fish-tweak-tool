@@ -63,13 +63,16 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   without a layout shift) around the active theme. Previously the card was never
   marked at all because `current_theme` wasn't surviving a restart (see above).
 
-- **Prompt tab: built-in styles are now a card gallery with live samples.**
-  Replaced the built-in-style dropdown with a gallery of cards (like the Themes
-  tab) — one per built-in style, each showing a **real colour-rendered sample** of
-  that prompt (from `fish_config prompt show <name>`, ANSI → Pango), with the name
-  below. Click a card to select it (current one gets the accent border), then
-  Apply. Now you can see what `disco` / `nim` / `acidhub` / … actually look like
-  before choosing, instead of picking a name blind. Samples load off the UI thread.
+- **Prompt tab redesigned around an interchangeable block.** The area below the
+  radios now swaps with the selection: **Built-in** shows a **card gallery** of
+  fish's bundled styles (each card a **real colour-rendered sample** from
+  `fish_config prompt show <name>`, ANSI → Pango, name below); **Tide / Hydro /
+  Pure** each show their own dedicated info panel instead. So you only ever see
+  the block that matches the chosen option. The separate "Default" radio was
+  merged into the gallery — its `default` card *is* fish's plain prompt (applying
+  it does a full reset, not a save). Click a card to pick a style (current one gets
+  the accent border, only while Built-in is active), then Apply. Samples load off
+  the UI thread.
 
 - **Repo links on plugin rows.** Every plugin/toggle row (Plugins tab + the git
   toggle) now shows an italic **link** that opens `github.com/<owner/repo>` in the
