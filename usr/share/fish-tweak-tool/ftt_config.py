@@ -27,3 +27,15 @@ def save_prefs(prefs):
     os.makedirs(os.path.dirname(PREFS_PATH), exist_ok=True)
     with open(PREFS_PATH, "w", encoding="utf-8") as f:
         json.dump(prefs, f, indent=2)
+
+
+def update_prefs(updates):
+    """Merge updates into the on-disk prefs and save; return the merged dict.
+
+    Always reads fresh from disk so one tab's save never clobbers keys another
+    tab wrote earlier in the session (each tab caches prefs at startup).
+    """
+    prefs = load_prefs()
+    prefs.update(updates)
+    save_prefs(prefs)
+    return prefs

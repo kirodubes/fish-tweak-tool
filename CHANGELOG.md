@@ -2,6 +2,102 @@
 
 All notable changes to Fish Tweak Tool are documented here. Newest first.
 
+## 2026.06.28
+
+### What Changed
+
+- **New Abbreviations tab** (placed before Settings, so Settings stays last). Two
+  parts. **(1) Git abbreviations** — a one-toggle fisher install of
+  `jhillyerd/plugin-git` (the most-used fish git-abbr plugin, 765★ — `gst` →
+  `git status`, `gco` → `git checkout`, ~100 more). We orchestrate the plugin
+  rather than bake in our own git set: three popular git-abbr plugins exist, they
+  overlap on names and even disagree on meaning (`gst` = stash vs status, `gp` =
+  push vs pull), so there's no safe single set to copy and no maintenance/licensing
+  debt to take on. **(2) A custom abbreviation editor** — add / edit / delete your
+  own abbreviations (name + expansion), written to FTT's managed block in
+  `config.fish` as `abbr -a -- <name> '<expansion>'`. This is the genuinely-unique
+  capability: no GUI (not even `fish_config browse`) lets you manage abbreviations.
+  The editor reads `abbr --show` and **warns inline** when a name you add already
+  exists elsewhere (e.g. a plugin) and would override it — but never imports or
+  re-owns other sources' abbreviations. Names are validated (no spaces, quotes or
+  backslashes; no duplicates; both fields required).
+
+- **Fixed a managed-block clobber bug.** `write_block` regenerates the whole block
+  from the settings dict it's handed, and each tab cached `prefs` at startup. With
+  the new abbreviations sharing the block, a greeting apply that passed only
+  `{greeting}` would have wiped every abbreviation (and the stale cache would drop
+  them from `prefs.json` too). Both the Settings and Abbreviations tabs now
+  **read-modify-write `prefs.json` from disk** at apply time and pass the complete
+  block via the new `ftt_managed.settings_from_prefs()`, so the two sections can no
+  longer erase each other.
+
+- **Current-setup overview on the Presets tab.** A read-only panel at the top of
+  the Presets tab shows what's actually configured right now — prompt, theme,
+  installed plugins (live `fisher list`), greeting, and abbreviation count (plus
+  whether the git set is on) — with a badge that reads **"✓ matches <preset>"**
+  when the live state equals a preset, or **"Custom setup"** otherwise. It reads
+  live truth (not a remembered label), so it stays honest even after you change a
+  single component, and it refreshes each time the tab is shown. This answers
+  "what did I set, again?" a week later at a glance.
+
+- **Presets now persist their state and stop clobbering abbreviations.** Applying
+  a preset wrote the managed block from a partial `{greeting}` dict — which, now
+  that abbreviations share that block, would have erased them; and presets never
+  recorded their prompt/theme in `prefs.json`, so the rest of the app couldn't
+  reflect a preset apply. Both fixed: `apply_preset_async` read-modify-writes the
+  full block via `settings_from_prefs`, and on success records
+  `current_prompt` / `current_builtin` / `current_theme` / `theme_variant` so the
+  overview (and other tabs) show reality.
+
+- **Fixed prefs being clobbered on window close (and between tabs).** Each tab and
+  the main window cached `prefs.json` at startup and saved that whole snapshot —
+  so closing the window wrote the *startup* prefs + window size back over
+  everything the tabs had persisted that session (a freshly-applied theme, your
+  abbreviations). Symptom: apply the `lava` theme, reopen, and the overview /
+  Themes tab still showed `default`. Added `ftt_config.update_prefs(updates)` which
+  read-modify-writes from disk, and routed `Main._on_close`, the Themes, Prompt,
+  Settings and Abbreviations saves through it. Now applied state actually sticks.
+
+- **Visible border on the current theme card.** `.theme-card` now reserves a 2px
+  transparent border so `.theme-current`'s accent border shows clearly (and
+  without a layout shift) around the active theme. Previously the card was never
+  marked at all because `current_theme` wasn't surviving a restart (see above).
+
+- **Git cheat-sheet on the Abbreviations tab.** Below the editor, a read-only
+  "Most-used git abbreviations" reference grid lists the 20 everyday ones the
+  `plugin-git` toggle installs (`gst` → `git status`, `gco` → `git checkout`, …),
+  so you can see what you get without leaving the app.
+
+### Technical Details
+
+- `ftt_config.py`: added `update_prefs(updates)` — the read-modify-write primitive
+  that ends the snapshot-clobber bug class.
+- `ftt_managed.py`: added `settings_from_prefs(prefs)` (single source for the full
+  block dict) and a `_quote()` helper; `render_block` now emits `abbr` lines from
+  `settings["abbreviations"]`, reusing the greeting's single-quote escaping.
+- `ftt_presets.py`: added `preset_prompt_rid()` + `_persist_prefs()`;
+  `apply_preset_async` merges the full block and persists components on success.
+- `ftt_gui.py`: `PresetsTab` gained the overview panel (`_build_overview` /
+  `_refresh_overview` / `_fill_overview`) plus the `_prompt_label`,
+  `_consensus_installed`, `_matched_preset` helpers; refreshes on the tab's `map`.
+- `ftt_gui.py`: new `_AbbrRow` (name/expansion entries + delete + inline collision
+  warning via a secondary entry icon) and `AbbrTab(_FisherTab)` — the git toggle
+  reuses `_PluginRow`/`_FisherTab` so install-state detection, snapshot and the
+  visible-terminal install path come for free. `abbr --show` is parsed off the UI
+  thread; the collision set subtracts FTT's own managed names so applied
+  abbreviations don't self-warn. `SettingsTab` apply converted to read-modify-write.
+- `prefs.json`: new `abbreviations` key — a list of `{name, expansion}` objects.
+
+### Files Modified
+
+- `usr/share/fish-tweak-tool/fish-tweak-tool.py`
+- `usr/share/fish-tweak-tool/ftt_config.py`
+- `usr/share/fish-tweak-tool/ftt_managed.py`
+- `usr/share/fish-tweak-tool/ftt_gui.py`
+- `usr/share/fish-tweak-tool/ftt_presets.py`
+- `usr/share/fish-tweak-tool/ftt.css`
+- `CLAUDE.md`, `README.md`
+
 ## 2026.06.27
 
 ### What Changed

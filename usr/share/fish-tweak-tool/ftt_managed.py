@@ -16,6 +16,19 @@ END = "# <<< fish-tweak-tool managed block <<<"
 CONFIG = os.path.expanduser("~/.config/fish/config.fish")
 
 
+def settings_from_prefs(prefs):
+    """Build the complete managed-block settings dict from a prefs dict."""
+    return {
+        "greeting": prefs.get("greeting", {}),
+        "abbreviations": prefs.get("abbreviations", []),
+    }
+
+
+def _quote(text):
+    """Escape text for a single-quoted fish string."""
+    return text.replace("\\", "\\\\").replace("'", "\\'")
+
+
 def render_block(settings):
     """Render the managed block text from a settings dict."""
     lines = [START, "# Managed by Fish Tweak Tool — edits inside this block are overwritten."]
@@ -27,8 +40,13 @@ def render_block(settings):
     elif mode == "fastfetch":
         lines.append("function fish_greeting; type -q fastfetch; and fastfetch; end")
     elif mode == "custom":
-        text = greeting.get("text", "").replace("\\", "\\\\").replace("'", "\\'")
-        lines.append(f"function fish_greeting; echo '{text}'; end")
+        lines.append(f"function fish_greeting; echo '{_quote(greeting.get('text', ''))}'; end")
+
+    for abbr in settings.get("abbreviations", []):
+        name = abbr.get("name", "").strip()
+        expansion = abbr.get("expansion", "").strip()
+        if name and expansion:
+            lines.append(f"abbr -a -- {name} '{_quote(expansion)}'")
 
     lines.append(END)
     return "\n".join(lines)

@@ -24,13 +24,13 @@ sudo) and ships in `nemesis_repo`. ATT's Shells → Fish tab will deep-link to i
 ```
 usr/share/fish-tweak-tool/
 ├── fish-tweak-tool.py   # Entry point: Gtk.Application + Main window
-├── ftt_gui.py           # GUI: five-tab Notebook (Presets · Plugins · Prompt · Themes · Settings)
+├── ftt_gui.py           # GUI: six-tab Notebook (Presets · Plugins · Prompt · Themes · Abbreviations · Settings)
 ├── ftt_presets.py       # M4 presets: one-click bundles (prompt + plugins + theme + greeting)
 ├── ftt_fisher.py        # M1 orchestration: fisher install/remove + snapshot
 ├── ftt_prompt.py        # M1 prompt selection: one set_prompt_async (default/built-in/framework)
 ├── ftt_theme.py         # M2 theme gallery: list/parse .theme + theme save
-├── ftt_managed.py       # M3 managed block: greeting in config.fish
-├── ftt_config.py        # App preferences (window size, current_theme, greeting)
+├── ftt_managed.py       # M3/M6 managed block: greeting + abbreviations in config.fish
+├── ftt_config.py        # App preferences (window size, current_theme, greeting, abbreviations)
 ├── log.py               # Logging: log_section / log_info / log_success / ...
 └── ftt.css              # GTK4 stylesheet
 ```
@@ -70,6 +70,12 @@ wrong silently clobbers user settings:
   `conf.d/*` *before* `config.fish`, so the payload would overwrite them.
 - **Never** set the greeting via `set -U` — the payload's `set -g fish_greeting`
   shadows a universal within the session. Set it in the managed block.
+- **The managed block is regenerated whole, from one settings dict.** Multiple
+  features share it (greeting, abbreviations). `ftt_managed.render_block` rebuilds
+  the entire block each apply, so any tab that applies **must** pass the *complete*
+  dict via `ftt_managed.settings_from_prefs(prefs)` — passing a partial dict (just
+  `{greeting}`) wipes the other sections. Tabs read-modify-write `prefs.json` from
+  disk at apply time (not a startup cache) so concurrent sections don't clobber.
 
 ## Roadmap (milestones)
 
@@ -85,10 +91,21 @@ wrong silently clobbers user settings:
   the terminal's job (Alacritty), and fish only honours `fish_cursor_*` in vi mode.
 - **M4** — Presets (one-click bundles). **Done** — Presets tab (Kiro / Minimal /
   Full); `ftt_presets.apply_preset_async` runs the whole bundle in one visible
-  command. Starship + per-prompt config (M6) and ASCII-art greeting (M7) are open.
+  command, persists components to prefs, and writes the full managed block (never
+  a partial dict — that would wipe abbreviations). The tab also carries a read-only
+  **Current setup** overview (prompt/theme/plugins/greeting/abbreviations + a
+  matches-preset-or-Custom badge), computed live and refreshed on tab show.
 - **M5** — nemesis_repo package + ATT deep-link. **Done** — package recipe live
   (alacritty optdepend); ATT Shells → Fish has a Fish-Tweak-Tool subsection
   (install / remove / launch). Both packages need rebuilding.
+- **M6** — Abbreviations. **Done** — Abbreviations tab (before Settings): a
+  `jhillyerd/plugin-git` fisher toggle for git abbreviations on top, and a custom
+  add/edit/delete editor below that writes `abbr -a -- name 'expansion'` to the
+  managed block. We orchestrate the git plugin rather than bake in a set (three
+  overlapping plugins, conflicting meanings). Editor warns (via `abbr --show`) when
+  a name overrides an existing one; never imports. The unique capability fish/`fish_config`
+  don't offer. Deferred from here: branded `kiro-fish-themes`, Base16/Bobthefish
+  escape hatch, VTE live-preview pane.
 
 Open design decisions still to settle before M1: D8 (preset apply semantics),
 D9 (snapshot-before-apply timing), D10 (orchestration failure / offline /

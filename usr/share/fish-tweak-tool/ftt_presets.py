@@ -8,6 +8,7 @@ sets the prompt (removing any other framework first) and applies the theme.
 
 import threading
 
+import ftt_config
 import ftt_fisher
 import ftt_managed
 import ftt_prompt
@@ -81,15 +82,39 @@ def _build_command(preset, frameworks):
     return "; ".join(parts)
 
 
+def preset_prompt_rid(preset):
+    """Return the prefs `current_prompt` id for a preset's prompt tuple."""
+    prompt = preset.get("prompt", ("default",))
+    if prompt[0] == "framework":
+        return "framework:" + prompt[1].split("@")[0]
+    if prompt[0] == "builtin":
+        return "builtin"
+    return "default"
+
+
+def _persist_prefs(prefs, preset):
+    """Record a successfully-applied preset's components in the prefs dict."""
+    prefs["current_prompt"] = preset_prompt_rid(preset)
+    if preset.get("prompt", ("default",))[0] == "builtin":
+        prefs["current_builtin"] = preset["prompt"][1]
+    prefs["current_theme"] = preset.get("theme", "default")
+    prefs["theme_variant"] = preset.get("variant", "dark")
+
+
 def apply_preset_async(preset, frameworks, on_done):
     """Apply a preset off the UI thread; call on_done(Result)."""
 
     def worker():
         backup = ftt_fisher.ensure_snapshot()
-        ftt_managed.write_block(
-            {"greeting": preset.get("greeting", {"mode": "keep"})}
-        )
+        # Read-modify-write so the preset's greeting never wipes the user's
+        # abbreviations from the shared managed block.
+        prefs = ftt_config.load_prefs()
+        prefs["greeting"] = preset.get("greeting", {"mode": "keep"})
+        ftt_managed.write_block(ftt_managed.settings_from_prefs(prefs))
         ok, message = ftt_fisher.run_visibly(_build_command(preset, frameworks))
+        if ok:
+            _persist_prefs(prefs, preset)
+        ftt_config.save_prefs(prefs)
         on_done(ftt_fisher.Result(ok, message, backup))
 
     threading.Thread(target=worker, daemon=True).start()

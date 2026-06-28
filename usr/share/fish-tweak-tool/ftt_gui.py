@@ -449,10 +449,10 @@ class PromptTab(_StatusMixin):
     def _prompt_applied(self, rid, builtin_name, result):
         self._apply_btn.set_sensitive(True)
         if result.ok:
-            self._prefs["current_prompt"] = rid
+            updates = {"current_prompt": rid}
             if builtin_name is not None:
-                self._prefs["current_builtin"] = builtin_name
-            ftt_config.save_prefs(self._prefs)
+                updates["current_builtin"] = builtin_name
+            self._prefs = ftt_config.update_prefs(updates)
             self._set_status("Prompt applied. Open a new shell to see it.")
         else:
             detail = result.message or "see terminal for details"
@@ -658,8 +658,7 @@ class ThemesTab(_StatusMixin):
 
     def _on_variant_changed(self, dropdown, _param):
         self._variant = _VARIANTS[dropdown.get_selected()]
-        self._prefs["theme_variant"] = self._variant
-        ftt_config.save_prefs(self._prefs)
+        self._prefs = ftt_config.update_prefs({"theme_variant": self._variant})
         for name, update in self._swatch_updaters.items():
             background, colors = ftt_theme.parse_theme(name, self._variant)
             self._card_colors[name] = (background, colors)
@@ -684,8 +683,7 @@ class ThemesTab(_StatusMixin):
             if name in self._cards:
                 self._cards[name].add_css_class("theme-current")
             self._current = name
-            self._prefs["current_theme"] = name
-            ftt_config.save_prefs(self._prefs)
+            self._prefs = ftt_config.update_prefs({"current_theme": name})
             self._set_status(f"Theme '{name}' applied. Open a new shell to see it.")
         else:
             detail = result.message or "see terminal for details"
@@ -792,19 +790,22 @@ class SettingsTab(_StatusMixin):
         if self._busy:
             return
         self._busy = True
-        settings = self._collect_settings()
+        greeting = self._collect_settings()["greeting"]
+        # Read-modify-write from disk so a greeting apply never wipes the
+        # abbreviations the Abbreviations tab wrote to the same managed block.
+        prefs = ftt_config.load_prefs()
+        prefs["greeting"] = greeting
         self._set_status("Applying settings…")
 
         def on_done(result):
-            GLib.idle_add(self._apply_finished, settings, result)
+            GLib.idle_add(self._apply_finished, greeting, result)
 
-        ftt_managed.apply_async(settings, on_done)
+        ftt_managed.apply_async(ftt_managed.settings_from_prefs(prefs), on_done)
 
-    def _apply_finished(self, settings, result):
+    def _apply_finished(self, greeting, result):
         self._busy = False
         if result.ok:
-            self._prefs["greeting"] = settings["greeting"]
-            ftt_config.save_prefs(self._prefs)
+            self._prefs = ftt_config.update_prefs({"greeting": greeting})
             self._refresh_backups()
             self._set_status("Settings applied. Open a new shell to see them.")
         else:
@@ -851,6 +852,55 @@ class SettingsTab(_StatusMixin):
 # ── Presets tab ──────────────────────────────────────────────────────────────
 
 
+_GIT_ABBR_PLUGIN = "jhillyerd/plugin-git"
+
+# Greeting mode → overview label.
+_GREETING_LABELS = {"keep": "unchanged", "off": "none", "fastfetch": "fastfetch", "custom": "custom"}
+
+# Current-setup overview rows: (prefs/derived key, caption).
+_OVERVIEW_ROWS = [
+    ("prompt", "Prompt"),
+    ("theme", "Theme"),
+    ("plugins", "Plugins"),
+    ("greeting", "Greeting"),
+    ("abbr", "Abbreviations"),
+]
+
+
+def _prompt_label(prefs):
+    """Human label for the current prompt recorded in prefs."""
+    rid = prefs.get("current_prompt", "default")
+    if rid == "builtin":
+        return f"Built-in: {prefs.get('current_builtin', '?')}"
+    if rid.startswith("framework:"):
+        return rid.rsplit("/", 1)[-1].capitalize()
+    return "Default"
+
+
+def _consensus_installed(installed):
+    """Short names of the consensus plugins that are installed."""
+    installed_lower = {p.lower() for p in installed}
+    return [repo.rsplit("/", 1)[-1] for repo, _ in _PLUGINS if repo.lower() in installed_lower]
+
+
+def _matched_preset(prefs, installed):
+    """Name of the preset whose components match the current state, or None."""
+    installed_lower = {p.lower() for p in installed}
+    cur_prompt = prefs.get("current_prompt", "default")
+    cur_theme = prefs.get("current_theme") or "default"
+    cur_mode = prefs.get("greeting", {}).get("mode", "keep")
+    for preset in ftt_presets.PRESETS:
+        if cur_prompt != ftt_presets.preset_prompt_rid(preset):
+            continue
+        if cur_theme != preset.get("theme", "default"):
+            continue
+        if cur_mode != preset.get("greeting", {}).get("mode", "keep"):
+            continue
+        if all(pl.lower() in installed_lower for pl in preset.get("plugins", [])):
+            return preset["name"]
+    return None
+
+
 class PresetsTab(_StatusMixin):
     """Presets tab — one-click shell looks that bundle prompt + plugins + theme (M4)."""
 
@@ -858,12 +908,17 @@ class PresetsTab(_StatusMixin):
         self._status = None
         self._status_timeout = 0
         self._apply_btns = []
+        self._ov_labels = {}
+        self._ov_badge = None
         self.widget = self._build()
 
     def _build(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         for side in ("top", "bottom", "start", "end"):
             getattr(box, f"set_margin_{side}")(16)
+
+        box.append(self._build_overview())
+        box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
 
         box.append(_section("Presets"))
         box.append(
@@ -886,7 +941,67 @@ class PresetsTab(_StatusMixin):
         scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroller.set_vexpand(True)
         scroller.set_child(box)
+        # Refresh the overview each time the tab is shown — picks up changes
+        # made on the other tabs since it was last visible.
+        scroller.connect("map", self._refresh_overview)
         return scroller
+
+    # ── current-setup overview ────────────────────────────────────────────
+    def _build_overview(self):
+        panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        panel.add_css_class("info-panel")
+
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        header.append(_section("Current setup"))
+        spacer = Gtk.Box()
+        spacer.set_hexpand(True)
+        header.append(spacer)
+        self._ov_badge = Gtk.Label(label="…", xalign=1)
+        self._ov_badge.set_valign(Gtk.Align.CENTER)
+        header.append(self._ov_badge)
+        panel.append(header)
+
+        grid = Gtk.Grid()
+        grid.set_row_spacing(2)
+        grid.set_column_spacing(12)
+        for row, (key, caption) in enumerate(_OVERVIEW_ROWS):
+            cap = Gtk.Label(label=caption, xalign=0)
+            cap.add_css_class("info-label")
+            value = Gtk.Label(label="…", xalign=0)
+            value.add_css_class("plugin-desc")
+            value.set_wrap(True)
+            value.set_hexpand(True)
+            grid.attach(cap, 0, row, 1, 1)
+            grid.attach(value, 1, row, 1, 1)
+            self._ov_labels[key] = value
+        panel.append(grid)
+        return panel
+
+    def _refresh_overview(self, *_args):
+        def worker():
+            installed = ftt_fisher.list_installed()
+            GLib.idle_add(self._fill_overview, installed)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _fill_overview(self, installed):
+        prefs = ftt_config.load_prefs()
+        consensus = _consensus_installed(installed)
+        git_on = _GIT_ABBR_PLUGIN.lower() in {p.lower() for p in installed}
+        count = len(prefs.get("abbreviations", []))
+        self._ov_labels["prompt"].set_text(_prompt_label(prefs))
+        self._ov_labels["theme"].set_text(prefs.get("current_theme") or "default")
+        self._ov_labels["plugins"].set_text(", ".join(consensus) if consensus else "none")
+        self._ov_labels["greeting"].set_text(
+            _GREETING_LABELS.get(prefs.get("greeting", {}).get("mode", "keep"), "unchanged")
+        )
+        self._ov_labels["abbr"].set_text(f"{count} custom" + (" · git set on" if git_on else ""))
+
+        name = _matched_preset(prefs, installed)
+        self._ov_badge.set_text(f"✓ matches {name}" if name else "Custom setup")
+        self._ov_badge.remove_css_class("status-line" if name is None else "muted")
+        self._ov_badge.add_css_class("status-line" if name else "muted")
+        return False
 
     def _make_row(self, preset):
         row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
@@ -944,6 +1059,7 @@ class PresetsTab(_StatusMixin):
     def _applied(self, preset, result):
         self._set_buttons(True)
         if result.ok:
+            self._refresh_overview()
             self._set_status(f"{preset['name']} preset applied. Open a new shell to see it.")
         else:
             detail = result.message or "see terminal for details"
@@ -953,6 +1069,299 @@ class PresetsTab(_StatusMixin):
     def _set_buttons(self, sensitive):
         for button in self._apply_btns:
             button.set_sensitive(sensitive)
+
+
+# ── Abbreviations tab ────────────────────────────────────────────────────────
+
+
+def _parse_abbr_names(output):
+    """Parse abbreviation names from `abbr --show` output (`abbr -a -- NAME 'VAL'`)."""
+    names = []
+    for line in output.splitlines():
+        tokens = line.split()
+        if "--" in tokens:
+            idx = tokens.index("--")
+            if idx + 1 < len(tokens):
+                names.append(tokens[idx + 1])
+    return names
+
+
+_COLLISION_HINT = "Already defined elsewhere (e.g. a plugin) — your version overrides it in new shells."
+
+# A sample of the most-used git abbreviations plugin-git installs (~100 total).
+_GIT_CHEATSHEET = [
+    ("g", "git"),
+    ("gst", "git status"),
+    ("ga", "git add"),
+    ("gaa", "git add --all"),
+    ("gapa", "git add --patch"),
+    ("gc", "git commit -v"),
+    ("gcam", "git commit -a -m"),
+    ("gcan!", "git commit -v -a --no-edit --amend"),
+    ("gco", "git checkout"),
+    ("gcb", "git checkout -b"),
+    ("gcom", "git checkout <default branch>"),
+    ("gcl", "git clone"),
+    ("gd", "git diff"),
+    ("gf", "git fetch"),
+    ("gfa", "git fetch --all --prune"),
+    ("gl", "git pull"),
+    ("gp", "git push"),
+    ("gp!", "git push --force-with-lease"),
+    ("gm", "git merge"),
+    ("grb", "git rebase"),
+    ("glog", "git log --oneline --graph"),
+]
+
+
+class _AbbrRow:
+    """One editable abbreviation: name entry, expansion entry, delete button."""
+
+    def __init__(self, name, expansion, on_delete, on_name_changed):
+        self._on_delete = on_delete
+
+        self.widget = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        self.widget.set_margin_top(4)
+        self.widget.set_margin_bottom(4)
+        self.widget.set_margin_start(6)
+        self.widget.set_margin_end(6)
+
+        self.name_entry = Gtk.Entry()
+        self.name_entry.set_placeholder_text("name")
+        self.name_entry.set_text(name)
+        self.name_entry.set_width_chars(12)
+        self.name_entry.connect("changed", lambda _e: on_name_changed())
+
+        self.expansion_entry = Gtk.Entry()
+        self.expansion_entry.set_placeholder_text("expands to…")
+        self.expansion_entry.set_text(expansion)
+        self.expansion_entry.set_hexpand(True)
+
+        delete_btn = Gtk.Button.new_from_icon_name("edit-delete-symbolic")
+        delete_btn.set_tooltip_text("Remove")
+        delete_btn.set_valign(Gtk.Align.CENTER)
+        delete_btn.connect("clicked", lambda _b: self._on_delete(self))
+
+        self.widget.append(self.name_entry)
+        self.widget.append(self.expansion_entry)
+        self.widget.append(delete_btn)
+
+    def name(self):
+        """Return the trimmed abbreviation name."""
+        return self.name_entry.get_text().strip()
+
+    def expansion(self):
+        """Return the trimmed expansion text."""
+        return self.expansion_entry.get_text().strip()
+
+    def set_collision(self, warned):
+        """Show or clear the inline 'overrides an existing abbreviation' warning."""
+        pos = Gtk.EntryIconPosition.SECONDARY
+        if warned:
+            self.name_entry.set_icon_from_icon_name(pos, "dialog-warning-symbolic")
+            self.name_entry.set_icon_tooltip_text(pos, _COLLISION_HINT)
+        else:
+            self.name_entry.set_icon_from_icon_name(pos, None)
+
+
+class AbbrTab(_FisherTab):
+    """Abbreviations tab — git-abbr plugin toggle plus a custom abbreviation editor."""
+
+    GIT_PLUGIN = _GIT_ABBR_PLUGIN
+
+    def __init__(self):
+        super().__init__()
+        self._prefs = ftt_config.load_prefs()
+        self._abbr_rows = []
+        self._rows_box = None
+        self._apply_btn = None
+        self._all_defined = set()
+        self._managed_names = {a.get("name", "") for a in self._prefs.get("abbreviations", [])}
+        self._busy = False
+        self.widget = self._build()
+
+    def _build(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        for side in ("top", "bottom", "start", "end"):
+            getattr(box, f"set_margin_{side}")(16)
+
+        box.append(_section("Git abbreviations"))
+        box.append(
+            _intro(
+                "Install a curated set of git abbreviations (oh-my-zsh style) — "
+                "gst → git status, gco → git checkout, and ~100 more — via fisher."
+            )
+        )
+        if ftt_fisher.is_fisher_available():
+            listbox = Gtk.ListBox()
+            listbox.set_selection_mode(Gtk.SelectionMode.NONE)
+            listbox.add_css_class("plugin-list")
+            row = _PluginRow(self.GIT_PLUGIN, "oh-my-zsh-style git abbreviations (gst, gco, gp, …)", self._on_toggle)
+            self._rows[self.GIT_PLUGIN] = row
+            listbox.append(row.widget)
+            box.append(listbox)
+        else:
+            note = _intro("fisher is not available — install it (sudo pacman -S fisher) to add the git set.")
+            note.add_css_class("muted")
+            box.append(note)
+
+        box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+        box.append(_section("Your abbreviations"))
+        box.append(
+            _intro(
+                "Add your own. Abbreviations expand inline as you type — e.g. 'k' → 'kubectl'. "
+                "Names cannot contain spaces. Apply, then open a new shell to use them."
+            )
+        )
+
+        self._rows_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        self._rows_box.add_css_class("plugin-list")
+        box.append(self._rows_box)
+        for abbr in self._prefs.get("abbreviations", []):
+            self._add_row(abbr.get("name", ""), abbr.get("expansion", ""))
+        if not self._abbr_rows:
+            self._add_row()
+
+        buttons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        add_btn = Gtk.Button(label="Add abbreviation")
+        add_btn.connect("clicked", lambda _b: self._add_row())
+        self._apply_btn = Gtk.Button(label="Apply abbreviations")
+        self._apply_btn.add_css_class("suggested-action")
+        self._apply_btn.connect("clicked", self._apply)
+        buttons.append(add_btn)
+        buttons.append(self._apply_btn)
+        buttons.set_halign(Gtk.Align.START)
+        box.append(buttons)
+
+        box.append(self._init_status())
+
+        box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+        box.append(self._build_cheatsheet())
+
+        self._refresh_states()
+        self._load_existing()
+
+        scroller = Gtk.ScrolledWindow()
+        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroller.set_vexpand(True)
+        scroller.set_child(box)
+        return scroller
+
+    def _build_cheatsheet(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box.append(_section("Most-used git abbreviations"))
+        note = _intro(
+            "A sample of what the toggle above installs — plugin-git ships ~100. "
+            "They expand inline as you type, just like your own."
+        )
+        note.add_css_class("muted")
+        box.append(note)
+
+        grid = Gtk.Grid()
+        grid.set_row_spacing(3)
+        grid.set_column_spacing(14)
+        grid.add_css_class("info-panel")
+        for i, (name, expansion) in enumerate(_GIT_CHEATSHEET):
+            col = (i % 2) * 2
+            abbr = Gtk.Label(label=name, xalign=0)
+            abbr.add_css_class("plugin-name")
+            exp = Gtk.Label(label=expansion, xalign=0)
+            exp.add_css_class("plugin-desc")
+            grid.attach(abbr, col, i // 2, 1, 1)
+            grid.attach(exp, col + 1, i // 2, 1, 1)
+        box.append(grid)
+        return box
+
+    # ── editor rows ───────────────────────────────────────────────────────
+    def _add_row(self, name="", expansion=""):
+        row = _AbbrRow(name, expansion, self._delete_row, self._refresh_collisions)
+        self._abbr_rows.append(row)
+        self._rows_box.append(row.widget)
+        self._refresh_collisions()
+
+    def _delete_row(self, row):
+        self._abbr_rows.remove(row)
+        self._rows_box.remove(row.widget)
+        self._refresh_collisions()
+
+    # ── collision detection ───────────────────────────────────────────────
+    def _load_existing(self):
+        def worker():
+            _rc, out, _err = ftt_fisher.run_fish("abbr --show")
+            GLib.idle_add(self._set_existing, _parse_abbr_names(out))
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _set_existing(self, names):
+        self._all_defined = set(names)
+        self._refresh_collisions()
+        return False
+
+    def _refresh_collisions(self):
+        external = self._all_defined - self._managed_names
+        for row in self._abbr_rows:
+            name = row.name()
+            row.set_collision(bool(name) and name in external)
+
+    def _toggle_finished(self, row, want_on, result):
+        # Installing the git set adds ~100 abbreviations; refresh the warnings.
+        super()._toggle_finished(row, want_on, result)
+        self._load_existing()
+        return False
+
+    # ── apply ─────────────────────────────────────────────────────────────
+    def _collect(self):
+        """Validate the editor rows; return (rows, error) with error None on success."""
+        rows = []
+        seen = set()
+        for row in self._abbr_rows:
+            name, expansion = row.name(), row.expansion()
+            if not name and not expansion:
+                continue
+            if not name or not expansion:
+                return None, f"'{name or expansion}': both a name and an expansion are required."
+            if any(c.isspace() for c in name):
+                return None, f"'{name}': abbreviation names cannot contain spaces."
+            if "'" in name or "\\" in name:
+                return None, f"'{name}': names cannot contain quotes or backslashes."
+            if name in seen:
+                return None, f"'{name}' is listed twice — names must be unique."
+            seen.add(name)
+            rows.append({"name": name, "expansion": expansion})
+        return rows, None
+
+    def _apply(self, _btn):
+        if self._busy:
+            return
+        rows, error = self._collect()
+        if error:
+            self._set_status(error, error=True)
+            return
+        self._busy = True
+        self._apply_btn.set_sensitive(False)
+        prefs = ftt_config.load_prefs()
+        prefs["abbreviations"] = rows
+        self._set_status("Applying abbreviations…")
+
+        def on_done(result):
+            GLib.idle_add(self._applied, rows, result)
+
+        ftt_managed.apply_async(ftt_managed.settings_from_prefs(prefs), on_done)
+
+    def _applied(self, rows, result):
+        self._busy = False
+        self._apply_btn.set_sensitive(True)
+        if result.ok:
+            self._prefs = ftt_config.update_prefs({"abbreviations": rows})
+            self._managed_names = {r["name"] for r in rows}
+            self._load_existing()
+            count = len(rows)
+            plural = "" if count == 1 else "s"
+            self._set_status(f"{count} abbreviation{plural} applied. Open a new shell to use them.")
+        else:
+            detail = result.message or "see terminal for details"
+            self._set_status(f"Could not apply: {detail}", error=True)
+        return False
 
 
 # ── Entry point ──────────────────────────────────────────────────────────────
@@ -1053,6 +1462,7 @@ def build(window, fish_version):
     notebook.append_page(PluginsTab().widget, Gtk.Label(label="Plugins"))
     notebook.append_page(PromptTab().widget, Gtk.Label(label="Prompt"))
     notebook.append_page(ThemesTab().widget, Gtk.Label(label="Themes"))
+    notebook.append_page(AbbrTab().widget, Gtk.Label(label="Abbreviations"))
     notebook.append_page(SettingsTab().widget, Gtk.Label(label="Settings"))
     root.append(notebook)
 

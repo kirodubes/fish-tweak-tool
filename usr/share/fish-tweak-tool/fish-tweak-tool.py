@@ -92,10 +92,11 @@ class Main(Gtk.ApplicationWindow):
         )
 
     def _on_close(self, _window):
+        # Read-modify-write from disk: saving the startup snapshot here would
+        # clobber current_theme / abbreviations / etc. that the tabs persisted
+        # during the session.
         w, h = self.get_default_size()
-        self._prefs["window_width"] = w
-        self._prefs["window_height"] = h
-        ftt_config.save_prefs(self._prefs)
+        ftt_config.update_prefs({"window_width": w, "window_height": h})
         return False
 
 
