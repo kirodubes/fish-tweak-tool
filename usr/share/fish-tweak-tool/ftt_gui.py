@@ -7,6 +7,8 @@ drops into a fixed slot with no structural churn.
 
 import os
 import re
+import shutil
+import subprocess
 import threading
 
 import gi
@@ -850,6 +852,51 @@ class ThemesTab(_StatusMixin):
 # ── Settings tab ─────────────────────────────────────────────────────────────
 
 
+# ASCII-art tools for the custom greeting. "none" = plain echo.
+_GREETING_TOOLS = ["None", "figlet", "toilet"]
+_FIGLET_FONT_DIR = "/usr/share/figlet/fonts"
+_TOILET_FONT_DIR = "/usr/share/figlet"  # toilet's own .tlf fonts live here
+_FIGLET_FONT_SKIP = {"mini", "mnemonic", "ivrit"}
+
+
+def _figlet_fonts():
+    """Installed figlet font names, 'standard' first."""
+    try:
+        names = sorted(
+            f[:-4] for f in os.listdir(_FIGLET_FONT_DIR)
+            if f.endswith(".flf") and f[:-4] not in _FIGLET_FONT_SKIP
+        )
+    except OSError:
+        return ["standard"]
+    if "standard" in names:
+        names.remove("standard")
+        names.insert(0, "standard")
+    return names or ["standard"]
+
+
+def _toilet_fonts():
+    """toilet's own .tlf font names, a nice one first."""
+    try:
+        names = sorted(f[:-4] for f in os.listdir(_TOILET_FONT_DIR) if f.endswith(".tlf"))
+    except OSError:
+        return ["future"]
+    for pref in ("future", "pagga", "emboss", "bigmono9"):
+        if pref in names:
+            names.remove(pref)
+            names.insert(0, pref)
+            break
+    return names or ["future"]
+
+
+def _greeting_fonts(tool):
+    """Font list for a greeting tool, or [] for 'none'."""
+    if tool == "figlet":
+        return _figlet_fonts()
+    if tool == "toilet":
+        return _toilet_fonts()
+    return []
+
+
 class SettingsTab(_StatusMixin):
     """Settings tab — greeting and backup / restore (M3)."""
 
@@ -860,6 +907,9 @@ class SettingsTab(_StatusMixin):
         self._custom_entry = None
         self._backup_dropdown = None
         self._greeting_radios = {}
+        self._gen_tool = None
+        self._gen_font = None
+        self._gen_font_names = []
         self.widget = self._build()
 
     def _build(self):
@@ -867,7 +917,21 @@ class SettingsTab(_StatusMixin):
         for side in ("top", "bottom", "start", "end"):
             getattr(box, f"set_margin_{side}")(16)
 
-        box.append(_section("Greeting"))
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        header.append(_section("Greeting"))
+        spacer = Gtk.Box()
+        spacer.set_hexpand(True)
+        header.append(spacer)
+        ff_btn = Gtk.Button(label="Open Fastfetch Tweak Tool")
+        ff_btn.set_valign(Gtk.Align.CENTER)
+        if shutil.which("fastfetch-tweak-tool"):
+            ff_btn.set_tooltip_text("Customise what fastfetch shows on launch")
+            ff_btn.connect("clicked", self._open_fastfetch_tool)
+        else:
+            ff_btn.set_sensitive(False)
+            ff_btn.set_tooltip_text("fastfetch-tweak-tool is not installed")
+        header.append(ff_btn)
+        box.append(header)
         box.append(self._build_greeting())
 
         apply_btn = Gtk.Button(label="Apply settings")
@@ -913,7 +977,46 @@ class SettingsTab(_StatusMixin):
         self._custom_entry.set_placeholder_text("Your greeting text")
         self._custom_entry.set_text(saved.get("text", ""))
         box.append(self._custom_entry)
+
+        art_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        art_label = Gtk.Label(label="ASCII art:")
+        art_label.set_valign(Gtk.Align.CENTER)
+        art_row.append(art_label)
+        self._gen_tool = Gtk.DropDown.new_from_strings(_GREETING_TOOLS)
+        self._gen_tool.set_selected({"figlet": 1, "toilet": 2}.get(saved.get("tool", "none"), 0))
+        self._gen_tool.connect("notify::selected", lambda *_a: self._refresh_fonts())
+        art_row.append(self._gen_tool)
+        self._gen_font = Gtk.DropDown.new_from_strings(["(none)"])
+        self._gen_font.set_hexpand(True)
+        art_row.append(self._gen_font)
+        box.append(art_row)
+
+        hint = _intro("Renders the custom text as ASCII art (figlet/toilet must be installed).")
+        hint.add_css_class("muted")
+        box.append(hint)
+        self._refresh_fonts()
         return box
+
+    def _current_tool(self):
+        return {0: "none", 1: "figlet", 2: "toilet"}.get(self._gen_tool.get_selected(), "none")
+
+    def _refresh_fonts(self):
+        fonts = _greeting_fonts(self._current_tool())
+        self._gen_font_names = fonts
+        self._gen_font.set_model(Gtk.StringList.new(fonts or ["(none)"]))
+        self._gen_font.set_sensitive(bool(fonts))
+        saved_font = self._prefs.get("greeting", {}).get("font", "")
+        if saved_font in fonts:
+            self._gen_font.set_selected(fonts.index(saved_font))
+
+    def _open_fastfetch_tool(self, _btn):
+        def worker():
+            try:
+                subprocess.Popen(["fastfetch-tweak-tool"])
+            except OSError as exc:
+                GLib.idle_add(self._set_status, f"Could not open Fastfetch Tweak Tool: {exc}", True)
+
+        threading.Thread(target=worker, daemon=True).start()
 
     def _build_backup(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -940,7 +1043,9 @@ class SettingsTab(_StatusMixin):
     # ── actions ───────────────────────────────────────────────────────────
     def _collect_settings(self):
         mode = next((k for k, r in self._greeting_radios.items() if r.get_active()), "keep")
-        return {"greeting": {"mode": mode, "text": self._custom_entry.get_text()}}
+        tool = self._current_tool()
+        font = self._gen_font_names[self._gen_font.get_selected()] if tool != "none" and self._gen_font_names else ""
+        return {"greeting": {"mode": mode, "text": self._custom_entry.get_text(), "tool": tool, "font": font}}
 
     def _apply_settings(self, _btn):
         if self._busy:

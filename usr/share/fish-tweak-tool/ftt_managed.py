@@ -40,7 +40,17 @@ def render_block(settings):
     elif mode == "fastfetch":
         lines.append("function fish_greeting; type -q fastfetch; and fastfetch; end")
     elif mode == "custom":
-        lines.append(f"function fish_greeting; echo '{_quote(greeting.get('text', ''))}'; end")
+        text = _quote(greeting.get("text", ""))
+        tool = greeting.get("tool", "none")
+        font = greeting.get("font", "")
+        if tool in ("figlet", "toilet") and font:
+            # Render as ASCII art at greeting time; fall back to plain echo if the tool is missing.
+            lines.append(
+                f"function fish_greeting; if type -q {tool}; "
+                f"{tool} -f '{font}' -w 1000 '{text}'; else; echo '{text}'; end; end"
+            )
+        else:
+            lines.append(f"function fish_greeting; echo '{text}'; end")
 
     for abbr in settings.get("abbreviations", []):
         name = abbr.get("name", "").strip()

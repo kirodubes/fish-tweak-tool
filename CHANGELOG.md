@@ -63,6 +63,18 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   without a layout shift) around the active theme. Previously the card was never
   marked at all because `current_theme` wasn't surviving a restart (see above).
 
+- **Custom greeting can render as ASCII art (figlet / toilet).** The Settings →
+  greeting "Custom text" option gained an **ASCII art** row: a tool dropdown
+  (None / figlet / toilet) + a font dropdown (populated live from the installed
+  `.flf` / `.tlf` fonts). The managed block then renders the text at greeting time
+  via `figlet`/`toilet -f <font> -w 1000`, falling back to a plain `echo` if the
+  tool isn't installed (`if type -q <tool>; …; else; echo …; end`). Reuses the font
+  enumeration approach from fastfetch-tweak-tool.
+
+- **"Open Fastfetch Tweak Tool" button** on the Settings tab (top-right of the
+  greeting header) — launches `fastfetch-tweak-tool` (Popen in a daemon thread);
+  disabled with a hint when it isn't installed. Pairs with the fastfetch greeting.
+
 - **Prompt tab redesigned around an interchangeable block.** The area below the
   radios now swaps with the selection: **Built-in** shows a **card gallery** of
   fish's bundled styles (each card a **real colour-rendered sample** from
@@ -92,7 +104,10 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   via `fish_config prompt show` in a worker thread.
 - `ftt_managed.py`: added `settings_from_prefs(prefs)` (single source for the full
   block dict) and a `_quote()` helper; `render_block` now emits `abbr` lines from
-  `settings["abbreviations"]`, reusing the greeting's single-quote escaping.
+  `settings["abbreviations"]`, reusing the greeting's single-quote escaping, and a
+  figlet/toilet custom-greeting branch (greeting dict gains `tool` + `font`).
+- `ftt_gui.py`: `SettingsTab` gained `_figlet_fonts`/`_toilet_fonts`/`_greeting_fonts`,
+  the ASCII-art tool/font dropdowns (`_refresh_fonts`), and `_open_fastfetch_tool`.
 - `ftt_presets.py`: added `preset_prompt_rid()` + `_persist_prefs()`;
   `apply_preset_async` merges the full block and persists components on success.
 - `ftt_gui.py`: `PresetsTab` gained the overview panel (`_build_overview` /

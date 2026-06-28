@@ -30,8 +30,9 @@ The app is organised into six tabs:
   (`jhillyerd/plugin-git`) via fisher, and add/edit/delete your own abbreviations
   (the one thing `fish_config` can't do). Warns when a name would override an
   existing one.
-- **Settings** — greeting (off / custom / fastfetch) and backup / restore of
-  `~/.config/fish/`.
+- **Settings** — greeting (off / custom / fastfetch; custom text can render as
+  figlet/toilet ASCII art), a shortcut to open Fastfetch Tweak Tool, and backup /
+  restore of `~/.config/fish/`.
 
 Fish Tweak Tool only ever writes *per-user* overrides (below the `source` line in
 `~/.config/fish/config.fish`) and uses fish's own `fish_config theme save` /
