@@ -63,6 +63,10 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   without a layout shift) around the active theme. Previously the card was never
   marked at all because `current_theme` wasn't surviving a restart (see above).
 
+- **Repo links on plugin rows.** Every plugin/toggle row (Plugins tab + the git
+  toggle) now shows an italic **link** that opens `github.com/<owner/repo>` in the
+  browser, so you can read what a plugin does before enabling it.
+
 - **Git cheat-sheet on the Abbreviations tab.** Below the editor, a read-only
   "Most-used git abbreviations" reference grid lists the 20 everyday ones the
   `plugin-git` toggle installs (`gst` → `git status`, `gco` → `git checkout`, …),

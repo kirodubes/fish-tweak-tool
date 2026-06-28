@@ -105,8 +105,14 @@ def _intro(text):
     return lbl
 
 
+def _open_link(label, uri):
+    """activate-link handler — open uri in the default browser."""
+    Gtk.UriLauncher.new(uri).launch(label.get_root(), None, None)
+    return True
+
+
 class _PluginRow:
-    """One install target: name, description, busy spinner, install/remove switch."""
+    """One install target: name, description, repo link, busy spinner, install/remove switch."""
 
     def __init__(self, plugin, description, on_toggle):
         self.plugin = plugin
@@ -129,6 +135,12 @@ class _PluginRow:
         text.append(name)
         text.append(desc)
 
+        link = Gtk.Label()
+        link.set_markup(f"<a href='https://github.com/{plugin}'><i>link</i></a>")
+        link.set_tooltip_text(f"Open github.com/{plugin}")
+        link.set_valign(Gtk.Align.CENTER)
+        link.connect("activate-link", _open_link)
+
         self.spinner = Gtk.Spinner()
         self.spinner.set_valign(Gtk.Align.CENTER)
         self.spinner.set_visible(False)
@@ -138,6 +150,7 @@ class _PluginRow:
         self.switch.connect("notify::active", self._switched)
 
         self.widget.append(text)
+        self.widget.append(link)
         self.widget.append(self.spinner)
         self.widget.append(self.switch)
 
