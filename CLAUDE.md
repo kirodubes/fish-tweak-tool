@@ -94,9 +94,13 @@ wrong silently clobbers user settings:
 - **M3** — Greeting + backup-restore of `~/.config/fish/`. **Done**
   (managed-block greeting, backup/restore panel). Cursor shape was dropped — it's
   the terminal's job (Alacritty), and fish only honours `fish_cursor_*` in vi mode.
-  Custom greeting can render as **figlet/toilet ASCII art** (tool + font dropdowns;
-  `render_block` emits the tool command with an `echo` fallback). Settings also has
-  an **"Open Fastfetch Tweak Tool"** launch button.
+  Custom greeting can render as **figlet/toilet/cowsay/botsay ASCII art** (tool +
+  font/variant dropdowns; `render_block` emits the tool command with an `echo`
+  fallback). If the chosen tool isn't installed, Apply offers to install its pacman
+  package via a **visible terminal** (`sudo pacman -S --needed <pkg>` — the user
+  authenticates there; the app never escalates silently, consistent with the
+  no-root-escalation rule). Settings also has an **"Open Fastfetch Tweak Tool"**
+  launch button.
 - **M4** — Presets (one-click bundles). **Done** — Presets tab (Kiro / Minimal /
   Full); `ftt_presets.apply_preset_async` runs the whole bundle in one visible
   command, persists components to prefs, and writes the full managed block (never

@@ -29,6 +29,17 @@ def _quote(text):
     return text.replace("\\", "\\\\").replace("'", "\\'")
 
 
+def _art_part(tool, base, echo, color):
+    """Greeting text-part for a font tool, optionally piped through lolcat for colour."""
+    if color:
+        # Full colour when both present; plain art if lolcat is missing; echo if the tool is.
+        return (
+            f"if type -q {tool}; and type -q lolcat; {base} | lolcat -f; "
+            f"else if type -q {tool}; {base}; else; {echo}; end"
+        )
+    return f"if type -q {tool}; {base}; else; {echo}; end"
+
+
 def render_block(settings):
     """Render the managed block text from a settings dict."""
     lines = [START, "# Managed by Fish Tweak Tool — edits inside this block are overwritten."]
@@ -43,14 +54,22 @@ def render_block(settings):
         text = _quote(greeting.get("text", ""))
         tool = greeting.get("tool", "none")
         font = greeting.get("font", "")
-        if tool in ("figlet", "toilet") and font:
-            # Render as ASCII art at greeting time; fall back to plain echo if the tool is missing.
-            lines.append(
-                f"function fish_greeting; if type -q {tool}; "
-                f"{tool} -f '{font}' -w 1000 '{text}'; else; echo '{text}'; end; end"
-            )
+        color = greeting.get("color", False)
+        echo = f"echo '{text}'"
+        if tool == "botsay":
+            # botsay colours itself with -c; no lolcat needed.
+            base = f"botsay -c '{text}'" if color else f"botsay '{text}'"
+            text_part = f"if type -q botsay; {base}; else; {echo}; end"
+        elif tool in ("figlet", "toilet") and font:
+            text_part = _art_part(tool, f"{tool} -f '{font}' -w 1000 '{text}'", echo, color)
+        elif tool == "cowsay" and font:
+            text_part = _art_part("cowsay", f"cowsay -f '{font}' '{text}'", echo, color)
         else:
-            lines.append(f"function fish_greeting; echo '{text}'; end")
+            text_part = echo
+        parts = [text_part]
+        if greeting.get("with_fastfetch"):
+            parts.append("type -q fastfetch; and fastfetch")
+        lines.append(f"function fish_greeting; {'; '.join(parts)}; end")
 
     for abbr in settings.get("abbreviations", []):
         name = abbr.get("name", "").strip()

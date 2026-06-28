@@ -852,10 +852,17 @@ class ThemesTab(_StatusMixin):
 # ── Settings tab ─────────────────────────────────────────────────────────────
 
 
-# ASCII-art tools for the custom greeting. "none" = plain echo.
-_GREETING_TOOLS = ["None", "figlet", "toilet"]
+# Default custom-greeting text, prefilled on first run.
+_DEFAULT_GREETING = "Welcome to KIRO"
+
+# ASCII-art tools for the custom greeting. "none" = plain echo. Each maps to a
+# pacman package of the same name; botsay has no font/variant.
+_GREETING_TOOLS = ["None", "figlet", "toilet", "cowsay", "botsay"]
+_GREETING_TOOL_BY_INDEX = {0: "none", 1: "figlet", 2: "toilet", 3: "cowsay", 4: "botsay"}
+_GREETING_INDEX_BY_TOOL = {"figlet": 1, "toilet": 2, "cowsay": 3, "botsay": 4}
 _FIGLET_FONT_DIR = "/usr/share/figlet/fonts"
 _TOILET_FONT_DIR = "/usr/share/figlet"  # toilet's own .tlf fonts live here
+_COWFILE_DIR = "/usr/share/cowsay/cows"
 _FIGLET_FONT_SKIP = {"mini", "mnemonic", "ivrit"}
 
 
@@ -888,12 +895,26 @@ def _toilet_fonts():
     return names or ["future"]
 
 
+def _cowfiles():
+    """Installed cowsay cowfile names, 'default' first."""
+    try:
+        names = sorted(f[:-4] for f in os.listdir(_COWFILE_DIR) if f.endswith(".cow"))
+    except OSError:
+        return ["default"]
+    if "default" in names:
+        names.remove("default")
+        names.insert(0, "default")
+    return names or ["default"]
+
+
 def _greeting_fonts(tool):
-    """Font list for a greeting tool, or [] for 'none'."""
+    """Font/variant list for a greeting tool, or [] for 'none'/'botsay'."""
     if tool == "figlet":
         return _figlet_fonts()
     if tool == "toilet":
         return _toilet_fonts()
+    if tool == "cowsay":
+        return _cowfiles()
     return []
 
 
@@ -910,6 +931,9 @@ class SettingsTab(_StatusMixin):
         self._gen_tool = None
         self._gen_font = None
         self._gen_font_names = []
+        self._gen_color = None
+        self._gen_color_box = None
+        self._with_fastfetch = None
         self.widget = self._build()
 
     def _build(self):
@@ -975,7 +999,7 @@ class SettingsTab(_StatusMixin):
 
         self._custom_entry = Gtk.Entry()
         self._custom_entry.set_placeholder_text("Your greeting text")
-        self._custom_entry.set_text(saved.get("text", ""))
+        self._custom_entry.set_text(saved.get("text", _DEFAULT_GREETING))
         box.append(self._custom_entry)
 
         art_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -983,31 +1007,53 @@ class SettingsTab(_StatusMixin):
         art_label.set_valign(Gtk.Align.CENTER)
         art_row.append(art_label)
         self._gen_tool = Gtk.DropDown.new_from_strings(_GREETING_TOOLS)
-        self._gen_tool.set_selected({"figlet": 1, "toilet": 2}.get(saved.get("tool", "none"), 0))
+        self._gen_tool.set_selected(_GREETING_INDEX_BY_TOOL.get(saved.get("tool", "none"), 0))
         self._gen_tool.connect("notify::selected", lambda *_a: self._refresh_fonts())
         art_row.append(self._gen_tool)
         self._gen_font = Gtk.DropDown.new_from_strings(["(none)"])
         self._gen_font.set_hexpand(True)
         art_row.append(self._gen_font)
+
+        # Rainbow switch for every tool: botsay uses -c, the others pipe through lolcat.
+        self._gen_color_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self._gen_color = Gtk.Switch()
+        self._gen_color.set_valign(Gtk.Align.CENTER)
+        color_label = Gtk.Label(label="Rainbow colour")
+        color_label.set_valign(Gtk.Align.CENTER)
+        self._gen_color_box.append(self._gen_color)
+        self._gen_color_box.append(color_label)
+        art_row.append(self._gen_color_box)
         box.append(art_row)
 
-        hint = _intro("Renders the custom text as ASCII art (figlet/toilet must be installed).")
+        hint = _intro("Renders the custom text as ASCII art. If the tool isn't installed, Apply offers to install it.")
         hint.add_css_class("muted")
         box.append(hint)
+
+        self._with_fastfetch = Gtk.CheckButton(label="then show fastfetch below the text")
+        self._with_fastfetch.set_active(bool(saved.get("with_fastfetch")))
+        box.append(self._with_fastfetch)
+
         self._refresh_fonts()
         return box
 
     def _current_tool(self):
-        return {0: "none", 1: "figlet", 2: "toilet"}.get(self._gen_tool.get_selected(), "none")
+        return _GREETING_TOOL_BY_INDEX.get(self._gen_tool.get_selected(), "none")
 
     def _refresh_fonts(self):
-        fonts = _greeting_fonts(self._current_tool())
+        tool = self._current_tool()
+        saved = self._prefs.get("greeting", {})
+        # Rainbow switch for any real tool; font dropdown only for tools that have fonts.
+        self._gen_color_box.set_visible(tool != "none")
+        if tool != "none":
+            self._gen_color.set_active(bool(saved.get("color")))
+        fonts = _greeting_fonts(tool)
         self._gen_font_names = fonts
-        self._gen_font.set_model(Gtk.StringList.new(fonts or ["(none)"]))
-        self._gen_font.set_sensitive(bool(fonts))
-        saved_font = self._prefs.get("greeting", {}).get("font", "")
-        if saved_font in fonts:
-            self._gen_font.set_selected(fonts.index(saved_font))
+        self._gen_font.set_visible(bool(fonts))
+        if fonts:
+            self._gen_font.set_model(Gtk.StringList.new(fonts))
+            self._gen_font.set_sensitive(True)
+            if saved.get("font", "") in fonts:
+                self._gen_font.set_selected(fonts.index(saved["font"]))
 
     def _open_fastfetch_tool(self, _btn):
         def worker():
@@ -1045,13 +1091,83 @@ class SettingsTab(_StatusMixin):
         mode = next((k for k, r in self._greeting_radios.items() if r.get_active()), "keep")
         tool = self._current_tool()
         font = self._gen_font_names[self._gen_font.get_selected()] if tool != "none" and self._gen_font_names else ""
-        return {"greeting": {"mode": mode, "text": self._custom_entry.get_text(), "tool": tool, "font": font}}
+        return {"greeting": {
+            "mode": mode,
+            "text": self._custom_entry.get_text(),
+            "tool": tool,
+            "font": font,
+            "color": tool != "none" and self._gen_color.get_active(),
+            "with_fastfetch": self._with_fastfetch.get_active(),
+        }}
+
+    def _missing_packages(self, greeting):
+        """Packages a custom greeting needs but that aren't installed (tool + lolcat)."""
+        if greeting["mode"] != "custom":
+            return []
+        tool = greeting.get("tool", "none")
+        pkgs = []
+        if tool != "none":
+            pkgs.append(tool)
+        # lolcat colours figlet/toilet/cowsay; botsay colours itself with -c.
+        if greeting.get("color") and tool in ("figlet", "toilet", "cowsay"):
+            pkgs.append("lolcat")
+        return [p for p in pkgs if not shutil.which(p)]
 
     def _apply_settings(self, _btn):
         if self._busy:
             return
-        self._busy = True
         greeting = self._collect_settings()["greeting"]
+        missing = self._missing_packages(greeting)
+        if missing:
+            self._busy = True
+            self._offer_install(missing, greeting)
+            return
+        self._do_apply(greeting)
+
+    def _offer_install(self, packages, greeting):
+        names = " and ".join(packages)
+        verb = "is" if len(packages) == 1 else "are"
+        dialog = Gtk.AlertDialog()
+        dialog.set_modal(True)
+        dialog.set_message(f"Install {names}?")
+        dialog.set_detail(
+            f"{names} {verb} not installed, so the greeting can't render fully. Install with "
+            "pacman? (You'll be asked for your password in a terminal.)"
+        )
+        dialog.set_buttons(["Cancel", "Install"])
+        dialog.set_cancel_button(0)
+        dialog.set_default_button(1)
+        dialog.choose(self.widget.get_root(), None, lambda dlg, res: self._install_choice(dlg, res, packages, greeting))
+
+    def _install_choice(self, dialog, result, packages, greeting):
+        try:
+            chosen = dialog.choose_finish(result)
+        except GLib.Error:
+            chosen = 0
+        if chosen != 1:
+            self._busy = False
+            self._set_status("Greeting not applied — install the package(s) or change the tool.")
+            return
+        self._set_status(f"Installing {' '.join(packages)}…")
+
+        def on_done(res):
+            GLib.idle_add(self._install_done, packages, greeting, res)
+
+        ftt_fisher.run_async(f"sudo pacman -S --needed {' '.join(packages)}", on_done, snapshot=False)
+
+    def _install_done(self, packages, greeting, result):
+        self._busy = False
+        still = [p for p in packages if not shutil.which(p)]
+        if result.ok and not still:
+            self._do_apply(greeting)
+        elif result.ok:
+            self._set_status(f"Still not found: {', '.join(still)}.", error=True)
+        else:
+            self._set_status(f"Could not install: {result.message or 'see terminal'}", error=True)
+        return False
+
+    def _do_apply(self, greeting):
+        self._busy = True
         # Read-modify-write from disk so a greeting apply never wipes the
         # abbreviations the Abbreviations tab wrote to the same managed block.
         prefs = ftt_config.load_prefs()

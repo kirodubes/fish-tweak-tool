@@ -63,13 +63,35 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   without a layout shift) around the active theme. Previously the card was never
   marked at all because `current_theme` wasn't surviving a restart (see above).
 
-- **Custom greeting can render as ASCII art (figlet / toilet).** The Settings →
-  greeting "Custom text" option gained an **ASCII art** row: a tool dropdown
-  (None / figlet / toilet) + a font dropdown (populated live from the installed
-  `.flf` / `.tlf` fonts). The managed block then renders the text at greeting time
-  via `figlet`/`toilet -f <font> -w 1000`, falling back to a plain `echo` if the
-  tool isn't installed (`if type -q <tool>; …; else; echo …; end`). Reuses the font
-  enumeration approach from fastfetch-tweak-tool.
+- **Custom greeting can render as ASCII art (figlet / toilet / cowsay / botsay).**
+  The Settings → greeting "Custom text" option gained an **ASCII art** row: a tool
+  dropdown (None / figlet / toilet / cowsay / botsay) + a font/variant dropdown
+  (populated live — figlet `.flf`, toilet `.tlf`, cowsay `.cow` cowfiles; botsay
+  has no variant). The managed block renders the text at greeting time via the
+  tool's command (`figlet`/`toilet -f <font> -w 1000`, `cowsay -f <cowfile>`,
+  `botsay`), falling back to a plain `echo` if the tool isn't installed. A
+  **Rainbow colour** switch sits on every tool's row — botsay colours itself
+  (`botsay -c`); figlet/toilet/cowsay pipe through **lolcat** (`… | lolcat -f`,
+  guarded so it degrades to plain art if lolcat is missing). botsay has no fonts,
+  so its row is switch-only,
+  (`if type -q <tool>; …; else; echo …; end`). Reuses the font enumeration approach
+  from fastfetch-tweak-tool.
+
+- **Custom greeting prefills with "Welcome to KIRO"** on first run (real editable
+  text, not just a placeholder), so the field starts with a sensible default.
+
+- **Compose a custom greeting with fastfetch.** A "then show fastfetch below the
+  text" checkbox lets a custom (optionally ASCII-art) greeting be followed by
+  fastfetch — e.g. a `toilet` banner on top, the fastfetch logo/system info under
+  it. `render_block` appends `type -q fastfetch; and fastfetch` after the text part
+  (greeting dict gains `with_fastfetch`).
+
+- **Apply offers to install missing greeting packages.** If you apply a custom
+  greeting whose tool (figlet/toilet/cowsay/botsay) — or `lolcat`, when Rainbow is
+  on for a font tool — isn't installed, a dialog offers to install the missing
+  package(s) in one go via `sudo pacman -S --needed <pkgs>` in a **visible
+  terminal** (you authenticate there — the app never escalates silently), then
+  continues the apply.
 
 - **"Open Fastfetch Tweak Tool" button** on the Settings tab (top-right of the
   greeting header) — launches `fastfetch-tweak-tool` (Popen in a daemon thread);
