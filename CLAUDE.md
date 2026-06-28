@@ -83,7 +83,9 @@ wrong silently clobbers user settings:
 - **M1** — Prompt & plugin orchestration via `fisher` (the reason-to-exist).
   Plugins tab **done**; Prompt tab **done** — a mutually-exclusive radio group
   (Default / Tide / Hydro / Pure / built-in), applying one removes the others
-  (fish has a single prompt slot). Starship deferred to presets.
+  (fish has a single prompt slot). Built-in styles are a **card gallery** with
+  live colour samples rendered from `fish_config prompt show` (ANSI → Pango via
+  `_ansi_to_markup`), not a dropdown. Starship deferred to presets.
 - **M2** — Theme gallery from `fish_config theme`. **Done** (card gallery,
   swatches, apply, current indicator, reset).
 - **M3** — Greeting + backup-restore of `~/.config/fish/`. **Done**

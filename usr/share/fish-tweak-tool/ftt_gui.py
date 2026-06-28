@@ -6,6 +6,7 @@ drops into a fixed slot with no structural churn.
 """
 
 import os
+import re
 import threading
 
 import gi
@@ -299,6 +300,72 @@ class PluginsTab(_FisherTab):
         return box
 
 
+# ── ANSI → Pango (prompt samples) ────────────────────────────────────────────
+
+
+_ANSI_BASIC = {
+    30: "#000000", 31: "#cc0000", 32: "#4e9a06", 33: "#c4a000",
+    34: "#3465a4", 35: "#75507b", 36: "#06989a", 37: "#d3d7cf",
+    90: "#555753", 91: "#ef2929", 92: "#8ae234", 93: "#fce94f",
+    94: "#729fcf", 95: "#ad7fa8", 96: "#34e2e2", 97: "#eeeeec",
+}
+_ANSI_RE = re.compile(r"\x1b\[([0-9;]*)m")
+
+
+def _ansi_span(text, state):
+    esc = GLib.markup_escape_text(text)
+    attrs = []
+    if state["fg"]:
+        attrs.append(f"foreground='{state['fg']}'")
+    if state["bold"]:
+        attrs.append("font_weight='bold'")
+    return f"<span {' '.join(attrs)}>{esc}</span>" if attrs else esc
+
+
+def _ansi_apply(codes, state):
+    parts = [int(c) for c in codes.split(";") if c != ""] or [0]
+    i = 0
+    while i < len(parts):
+        code = parts[i]
+        if code == 0:
+            state.update(fg=None, bold=False)
+        elif code == 1:
+            state["bold"] = True
+        elif code == 22:
+            state["bold"] = False
+        elif code == 39:
+            state["fg"] = None
+        elif code == 38 and parts[i + 1 : i + 2] == [2] and i + 4 < len(parts):
+            state["fg"] = "#{:02x}{:02x}{:02x}".format(parts[i + 2], parts[i + 3], parts[i + 4])
+            i += 4
+        elif code in _ANSI_BASIC:
+            state["fg"] = _ANSI_BASIC[code]
+        i += 1
+
+
+def _ansi_to_markup(text):
+    """Convert ANSI-coloured terminal text to Pango markup (foreground + bold)."""
+    state = {"fg": None, "bold": False}
+    out = []
+    pos = 0
+    for match in _ANSI_RE.finditer(text):
+        chunk = text[pos : match.start()]
+        if chunk:
+            out.append(_ansi_span(chunk, state))
+        _ansi_apply(match.group(1), state)
+        pos = match.end()
+    if text[pos:]:
+        out.append(_ansi_span(text[pos:], state))
+    return "".join(out)
+
+
+def _prompt_sample_markup(raw):
+    """Markup for a `fish_config prompt show` sample (the line after the name header)."""
+    lines = raw.splitlines()
+    sample = lines[1] if len(lines) > 1 else (lines[0] if lines else "")
+    return f"<tt><span background='#1d1f21'> {_ansi_to_markup(sample)} </span></tt>"
+
+
 # ── Prompt tab ───────────────────────────────────────────────────────────────
 
 
@@ -316,7 +383,9 @@ class PromptTab(_StatusMixin):
         self._radios = {}
         self._group_first = None
         self._builtin_names = []
-        self._dropdown = None
+        self._cards = {}
+        self._sample_labels = {}
+        self._selected_builtin = None
         self._apply_btn = None
         self._info_label = None
         self._status = None
@@ -343,17 +412,26 @@ class PromptTab(_StatusMixin):
     def _on_radio_toggled(self, button, rid):
         if not button.get_active():
             return
-        if self._dropdown is not None:
-            self._dropdown.set_sensitive(rid == "builtin")
         self._info_label.set_markup(self._info_for(rid))
+        self._refresh_card_highlight()
+
+    def _refresh_card_highlight(self):
+        # A card is only marked current when "Built-in style" is the active choice,
+        # so a built-in card never looks selected while Default/a framework is.
+        active = self._radios["builtin"].get_active()
+        for name, card in self._cards.items():
+            if active and name == self._selected_builtin:
+                card.add_css_class("theme-current")
+            else:
+                card.remove_css_class("theme-current")
 
     def _info_for(self, rid):
         if rid.startswith("framework:"):
             return _FRAMEWORK_INFO.get(rid.split(":", 1)[1], _FRAMEWORK_INFO_DEFAULT)
         if rid == "builtin":
             return (
-                "<b>Built-in styles</b> ship with fish — zero dependencies. Pick one "
-                "from the dropdown and Apply; fish saves it as your prompt via "
+                "<b>Built-in styles</b> ship with fish — zero dependencies. Click a "
+                "card below to pick one, then Apply; fish saves it as your prompt via "
                 "<tt>fish_config prompt save</tt>."
             )
         return (
@@ -385,15 +463,21 @@ class PromptTab(_StatusMixin):
             name = key.rsplit("/", 1)[-1].capitalize()
             self._add_radio(group, f"framework:{key}", f"{name} — {desc}", sensitive=fisher)
 
-        builtin_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        builtin_row.append(self._add_radio(None, "builtin", "Built-in style", sensitive=bool(self._builtin_names)))
-        self._dropdown = Gtk.DropDown.new_from_strings(self._builtin_names or ["(none)"])
-        self._dropdown.set_hexpand(True)
-        self._dropdown.set_sensitive(False)
-        self._dropdown.set_margin_end(8)
-        builtin_row.append(self._dropdown)
-        group.append(builtin_row)
+        self._add_radio(group, "builtin", "Built-in style — pick a card below", sensitive=bool(self._builtin_names))
         box.append(group)
+
+        if self._builtin_names:
+            flow = Gtk.FlowBox()
+            flow.set_selection_mode(Gtk.SelectionMode.NONE)
+            flow.set_max_children_per_line(4)
+            flow.set_column_spacing(10)
+            flow.set_row_spacing(10)
+            flow.set_homogeneous(True)
+            for name in self._builtin_names:
+                card = self._make_card(name)
+                self._cards[name] = card
+                flow.append(card)
+            box.append(flow)
 
         self._apply_btn = Gtk.Button(label="Apply prompt")
         self._apply_btn.add_css_class("suggested-action")
@@ -419,6 +503,7 @@ class PromptTab(_StatusMixin):
 
         box.append(self._status)
         self._restore_selection()
+        self._load_samples()
 
         scroller = Gtk.ScrolledWindow()
         scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -426,24 +511,64 @@ class PromptTab(_StatusMixin):
         scroller.set_child(box)
         return scroller
 
+    def _make_card(self, name):
+        button = Gtk.Button()
+        button.add_css_class("theme-card")
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        sample = Gtk.Label(xalign=0)
+        sample.add_css_class("theme-preview")
+        sample.set_ellipsize(3)  # Pango.EllipsizeMode.END
+        sample.set_max_width_chars(28)
+        sample.set_markup(f"<tt><span background='#1d1f21'> {GLib.markup_escape_text(name)} … </span></tt>")
+        self._sample_labels[name] = sample
+        content.append(sample)
+        label = Gtk.Label(label=name, xalign=0)
+        label.add_css_class("plugin-name")
+        label.set_ellipsize(3)
+        content.append(label)
+        button.set_child(content)
+        button.connect("clicked", lambda _b, n=name: self._select_builtin(n))
+        return button
+
+    def _select_builtin(self, name):
+        self._selected_builtin = name
+        self._radios["builtin"].set_active(True)
+        self._refresh_card_highlight()
+
+    def _load_samples(self):
+        def worker():
+            for name in self._builtin_names:
+                _rc, out, _err = ftt_fisher.run_fish(f"fish_config prompt show {name}")
+                GLib.idle_add(self._set_sample, name, out)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _set_sample(self, name, raw):
+        label = self._sample_labels.get(name)
+        if label is not None and raw.strip():
+            label.set_markup(_prompt_sample_markup(raw))
+        return False
+
     def _restore_selection(self):
         current = self._prefs.get("current_prompt", "default")
         radio = self._radios.get(current)
         if radio is None or not radio.get_sensitive():
             radio = self._radios["default"]
-        radio.set_active(True)
         saved = self._prefs.get("current_builtin")
-        if saved in self._builtin_names:
-            self._dropdown.set_selected(self._builtin_names.index(saved))
+        if saved not in self._builtin_names:
+            saved = self._builtin_names[0] if self._builtin_names else None
+        self._selected_builtin = saved
+        radio.set_active(True)
+        self._refresh_card_highlight()
 
     def _apply_prompt(self, _btn):
         rid = next((r for r, b in self._radios.items() if b.get_active()), "default")
         builtin_name = None
         if rid == "builtin":
-            if not self._builtin_names:
-                self._set_status("No built-in prompts found.", error=True)
+            if not self._selected_builtin:
+                self._set_status("Pick a built-in style first.", error=True)
                 return
-            builtin_name = self._dropdown.get_model().get_string(self._dropdown.get_selected())
+            builtin_name = self._selected_builtin
             choice = ("builtin", builtin_name)
         elif rid.startswith("framework:"):
             choice = ("framework", self._specs[rid.split(":", 1)[1]])

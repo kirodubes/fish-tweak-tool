@@ -63,6 +63,14 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   without a layout shift) around the active theme. Previously the card was never
   marked at all because `current_theme` wasn't surviving a restart (see above).
 
+- **Prompt tab: built-in styles are now a card gallery with live samples.**
+  Replaced the built-in-style dropdown with a gallery of cards (like the Themes
+  tab) — one per built-in style, each showing a **real colour-rendered sample** of
+  that prompt (from `fish_config prompt show <name>`, ANSI → Pango), with the name
+  below. Click a card to select it (current one gets the accent border), then
+  Apply. Now you can see what `disco` / `nim` / `acidhub` / … actually look like
+  before choosing, instead of picking a name blind. Samples load off the UI thread.
+
 - **Repo links on plugin rows.** Every plugin/toggle row (Plugins tab + the git
   toggle) now shows an italic **link** that opens `github.com/<owner/repo>` in the
   browser, so you can read what a plugin does before enabling it.
@@ -76,6 +84,9 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
 
 - `ftt_config.py`: added `update_prefs(updates)` — the read-modify-write primitive
   that ends the snapshot-clobber bug class.
+- `ftt_gui.py`: added an ANSI → Pango converter (`_ansi_to_markup` + helpers) for
+  prompt samples; `PromptTab` now builds a `_make_card` gallery and loads samples
+  via `fish_config prompt show` in a worker thread.
 - `ftt_managed.py`: added `settings_from_prefs(prefs)` (single source for the full
   block dict) and a `_quote()` helper; `render_block` now emits `abbr` lines from
   `settings["abbreviations"]`, reusing the greeting's single-quote escaping.
