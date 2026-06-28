@@ -21,6 +21,7 @@ def settings_from_prefs(prefs):
     return {
         "greeting": prefs.get("greeting", {}),
         "abbreviations": prefs.get("abbreviations", []),
+        "starship": prefs.get("starship", False),
     }
 
 
@@ -76,6 +77,10 @@ def render_block(settings):
         expansion = abbr.get("expansion", "").strip()
         if name and expansion:
             lines.append(f"abbr -a -- {name} '{_quote(expansion)}'")
+
+    if settings.get("starship"):
+        # Starship isn't a fisher plugin — it's sourced here (loads last, so it wins).
+        lines.append("type -q starship; and starship init fish | source")
 
     lines.append(END)
     return "\n".join(lines)

@@ -82,8 +82,12 @@ wrong silently clobbers user settings:
 - **M0** — Scaffold (done): GTK4 skeleton, launcher, desktop entry.
 - **M1** — Prompt & plugin orchestration via `fisher` (the reason-to-exist).
   Plugins tab **done**; Prompt tab **done** — a mutually-exclusive radio group
-  (Built-in / Tide / Hydro / Pure), applying one removes the others (fish has a
-  single prompt slot). The block below the radios is an interchangeable `Gtk.Stack`:
+  (Built-in / Tide / Hydro / Pure / **Starship**), applying one removes the others
+  (fish has a single prompt slot). Starship is not a fisher plugin: it's a pacman
+  `extra` binary, installed via the visible-terminal offer and enabled with
+  `starship init fish | source` in the managed block (the `starship` flag in
+  `settings_from_prefs`/`render_block`); the apply path uses `ftt_prompt.build_command`
+  to coordinate the block write with the prompt-switch command. The block below the radios is an interchangeable `Gtk.Stack`:
   **Built-in** → a **card gallery** of fish styles with live colour samples
   rendered from `fish_config prompt show` (ANSI → Pango via `_ansi_to_markup`);
   each framework → its own info panel. No standalone "Default" radio — the

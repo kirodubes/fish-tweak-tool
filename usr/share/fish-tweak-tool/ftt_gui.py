@@ -71,6 +71,17 @@ _FRAMEWORK_INFO = {
 
 _FRAMEWORK_INFO_DEFAULT = "Select a prompt framework above to see details and first steps."
 
+# Starship is a standalone pacman binary (not a fisher plugin), enabled via
+# `starship init fish`. Info panel shown when the Starship radio is selected.
+_STARSHIP_INFO = (
+    "<b>Starship</b> — a fast, highly-customisable cross-shell prompt (a single "
+    "Rust binary, not a fisher plugin). Applying installs the <tt>starship</tt> "
+    "package if needed and enables it via <tt>starship init fish</tt>.\n\n"
+    "<b>First steps:</b> configure it in <tt>~/.config/starship.toml</tt>; browse "
+    "presets and modules at <a href='https://github.com/starship/starship'>"
+    "github.com/starship/starship</a>."
+)
+
 
 # ── Generic helpers ──────────────────────────────────────────────────────────
 
@@ -451,6 +462,7 @@ class PromptTab(_StatusMixin):
         for key, _spec, desc in _PROMPT_FRAMEWORKS:
             name = key.rsplit("/", 1)[-1].capitalize()
             self._add_radio(group, f"framework:{key}", f"{name} — {desc}", sensitive=fisher)
+        self._add_radio(group, "starship", "Starship — fast, customisable cross-shell prompt (pacman)")
         box.append(group)
 
         self._apply_btn = Gtk.Button(label="Apply prompt")
@@ -463,10 +475,6 @@ class PromptTab(_StatusMixin):
             note = _intro("fisher is not available — install it (sudo pacman -S fisher) to use prompt frameworks.")
             note.add_css_class("muted")
             box.append(note)
-
-        starship_note = _intro("Starship support is coming with presets.")
-        starship_note.add_css_class("muted")
-        box.append(starship_note)
 
         box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
         box.append(self._build_stack())
@@ -488,12 +496,20 @@ class PromptTab(_StatusMixin):
         self._stack.set_vhomogeneous(False)
         self._stack.add_named(self._build_gallery_page(), "builtin")
         for key, _spec, _desc in _PROMPT_FRAMEWORKS:
-            info = Gtk.Label(xalign=0, yalign=0)
-            info.add_css_class("info-panel")
-            info.set_wrap(True)
-            info.set_markup(_FRAMEWORK_INFO.get(key, _FRAMEWORK_INFO_DEFAULT))
-            self._stack.add_named(info, f"framework:{key}")
+            # The framework key is its GitHub owner/repo, so link to it like Starship.
+            info = _FRAMEWORK_INFO.get(key, _FRAMEWORK_INFO_DEFAULT)
+            info += f"\n\n<b>More:</b> <a href='https://github.com/{key}'>github.com/{key}</a>"
+            self._stack.add_named(self._info_page(info), f"framework:{key}")
+        self._stack.add_named(self._info_page(_STARSHIP_INFO), "starship")
         return self._stack
+
+    def _info_page(self, markup):
+        info = Gtk.Label(xalign=0, yalign=0)
+        info.add_css_class("info-panel")
+        info.set_wrap(True)
+        info.set_markup(markup)
+        info.connect("activate-link", _open_link)  # open repo/doc links in the browser
+        return info
 
     def _build_gallery_page(self):
         page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
@@ -583,7 +599,9 @@ class PromptTab(_StatusMixin):
     def _apply_prompt(self, _btn):
         rid = next((r for r, b in self._radios.items() if b.get_active()), "builtin")
         builtin_name = None
-        if rid.startswith("framework:"):
+        if rid == "starship":
+            choice, prompt_key = ("starship",), "starship"
+        elif rid.startswith("framework:"):
             choice = ("framework", self._specs[rid.split(":", 1)[1]])
             prompt_key = rid
         else:
@@ -595,14 +613,70 @@ class PromptTab(_StatusMixin):
             choice = ("default",) if builtin_name == "default" else ("builtin", builtin_name)
             prompt_key = "default" if builtin_name == "default" else "builtin"
 
+        # Starship is a pacman package, not a fisher plugin — offer to install it.
+        if rid == "starship" and not shutil.which("starship"):
+            self._offer_starship_install(choice, prompt_key, builtin_name)
+            return
+        self._do_prompt_apply(choice, prompt_key, builtin_name)
+
+    def _offer_starship_install(self, choice, prompt_key, builtin_name):
+        dialog = Gtk.AlertDialog()
+        dialog.set_modal(True)
+        dialog.set_message("Install starship?")
+        dialog.set_detail(
+            "Starship isn't installed. Install the starship package with pacman? "
+            "(You'll be asked for your password in a terminal.)"
+        )
+        dialog.set_buttons(["Cancel", "Install starship"])
+        dialog.set_cancel_button(0)
+        dialog.set_default_button(1)
+        dialog.choose(
+            self.widget.get_root(), None,
+            lambda dlg, res: self._starship_install_choice(dlg, res, choice, prompt_key, builtin_name),
+        )
+
+    def _starship_install_choice(self, dialog, result, choice, prompt_key, builtin_name):
+        try:
+            chosen = dialog.choose_finish(result)
+        except GLib.Error:
+            chosen = 0
+        if chosen != 1:
+            self._set_status("Starship not installed — pick another prompt or install it, then Apply.")
+            return
+        self._apply_btn.set_sensitive(False)
+        self._set_status("Installing starship…")
+
+        def on_done(res):
+            GLib.idle_add(self._starship_installed, res, choice, prompt_key, builtin_name)
+
+        ftt_fisher.run_async("sudo pacman -S --needed starship", on_done, snapshot=False)
+
+    def _starship_installed(self, result, choice, prompt_key, builtin_name):
+        if result.ok and shutil.which("starship"):
+            self._do_prompt_apply(choice, prompt_key, builtin_name)
+        else:
+            self._apply_btn.set_sensitive(True)
+            self._set_status(f"Could not install starship: {result.message or 'see terminal'}", error=True)
+        return False
+
+    def _do_prompt_apply(self, choice, prompt_key, builtin_name):
         self._apply_btn.set_sensitive(False)
         self._set_status("Applying prompt…")
         frameworks = [(key, spec) for key, spec, _ in _PROMPT_FRAMEWORKS]
+        is_starship = prompt_key == "starship"
 
-        def on_done(result):
-            GLib.idle_add(self._prompt_applied, prompt_key, builtin_name, result)
+        def worker():
+            backup = ftt_fisher.ensure_snapshot()
+            # Toggle the starship init line in the managed block — set when starship is
+            # chosen, cleared for any other prompt — then run the prompt-switch command.
+            prefs = ftt_config.load_prefs()
+            prefs["starship"] = is_starship
+            ftt_config.save_prefs(prefs)
+            ftt_managed.write_block(ftt_managed.settings_from_prefs(prefs))
+            ok, message = ftt_fisher.run_visibly(ftt_prompt.build_command(choice, frameworks))
+            GLib.idle_add(self._prompt_applied, prompt_key, builtin_name, ftt_fisher.Result(ok, message, backup))
 
-        ftt_prompt.set_prompt_async(choice, frameworks, on_done, snapshot=True)
+        threading.Thread(target=worker, daemon=True).start()
 
     def _prompt_applied(self, prompt_key, builtin_name, result):
         self._apply_btn.set_sensitive(True)
@@ -1247,6 +1321,8 @@ _OVERVIEW_ROWS = [
 def _prompt_label(prefs):
     """Human label for the current prompt recorded in prefs."""
     rid = prefs.get("current_prompt", "default")
+    if rid == "starship":
+        return "Starship"
     if rid == "builtin":
         return f"Built-in: {prefs.get('current_builtin', '?')}"
     if rid.startswith("framework:"):

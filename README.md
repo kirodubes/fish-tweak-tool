@@ -23,8 +23,8 @@ The app is organised into six tabs:
 - **Plugins** — toggle `fisher` plugins: `fzf.fish`, `autopair.fish`, `sponge`,
   `puffer-fish`.
 - **Prompt** — pick a zero-dependency fish built-in style from a card gallery with
-  live colour samples, or install a framework (Tide, Hydro, Pure); the panel below
-  the radios swaps to match the selected option.
+  live colour samples, install a framework (Tide, Hydro, Pure), or enable Starship;
+  the panel below the radios swaps to match the selected option.
 - **Themes** — browse and apply colour themes from `fish_config theme`.
 - **Abbreviations** — install a curated git-abbreviation set
   (`jhillyerd/plugin-git`) via fisher, and add/edit/delete your own abbreviations

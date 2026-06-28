@@ -97,6 +97,19 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   greeting header) — launches `fastfetch-tweak-tool` (Popen in a daemon thread);
   disabled with a hint when it isn't installed. Pairs with the fastfetch greeting.
 
+- **Starship prompt support.** Added a fifth Prompt radio — **Starship**. Unlike
+  Tide/Hydro/Pure (fisher plugins), Starship is a pacman `extra` binary, so it has
+  its own path: Apply offers to install the `starship` package via the visible
+  terminal, then enables it with `starship init fish | source` written to the
+  **managed block** (a new `starship` flag in `settings_from_prefs`/`render_block`,
+  guarded by `type -q starship`). Switching to any other prompt clears that line.
+  Its info panel links to <https://github.com/starship/starship> — and the
+  Tide/Hydro/Pure panels now carry a github.com link to their repo too (derived
+  from each framework's key). `ftt_prompt`'s
+  command builder was exposed as `build_command` so the apply path can coordinate
+  the managed-block write with the prompt-switch command. Removed the old "Starship
+  coming" note.
+
 - **Prompt tab redesigned around an interchangeable block.** The area below the
   radios now swaps with the selection: **Built-in** shows a **card gallery** of
   fish's bundled styles (each card a **real colour-rendered sample** from

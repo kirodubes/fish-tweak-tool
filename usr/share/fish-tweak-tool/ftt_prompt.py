@@ -26,34 +26,34 @@ def list_builtin():
     return [line.strip() for line in out.splitlines() if line.strip()]
 
 
-def set_prompt_async(choice, frameworks, on_done, snapshot=True):
-    """Apply a single prompt exclusively, off the UI thread; call on_done(Result).
+def build_command(choice, frameworks):
+    """Build the one visible shell command that switches the prompt to `choice`.
 
     `choice` is one of:
       ("default",)         — fish's built-in default (just clear everything)
       ("builtin", name)    — a fish_config built-in style
       ("framework", spec)  — install a prompt framework
+      ("starship",)        — clear everything; the managed block sources starship
 
-    `frameworks` is the list of (key, spec); any currently-installed one is
-    removed first so only the chosen prompt remains. The whole thing runs as one
-    visible command, and the final command's status is the reported result.
+    Any currently-installed framework is removed first so only the chosen prompt
+    remains. Call this in a worker thread (it queries `fisher list`).
     """
     files = " ".join(PROMPT_FUNCTION_FILES)
-
     framework_bases = {key.lower() for key, _ in frameworks}
+    # fisher lists (and removes) plugins by their exact name, which may carry a
+    # version tag (Tide → "ilancosman/tide@v6"). Match a framework by its base
+    # (before "@") but remove using the exact installed name.
+    installed = ftt_fisher.list_installed()
+    removes = [name for name in installed if name.split("@")[0].lower() in framework_bases]
+    parts = [f"fisher remove {name}" for name in removes]
+    parts.append(f"rm -f {files}")
+    if choice[0] == "builtin":
+        parts.append(f"echo y | fish_config prompt save {choice[1]}")
+    elif choice[0] == "framework":
+        parts.append(f"fisher install {choice[1]}")
+    return "; ".join(parts)
 
-    def build():
-        # fisher lists (and removes) plugins by their exact name, which may carry a
-        # version tag (Tide → "ilancosman/tide@v6"). Match a framework by its base
-        # (before "@") but remove using the exact installed name.
-        installed = ftt_fisher.list_installed()
-        removes = [name for name in installed if name.split("@")[0].lower() in framework_bases]
-        parts = [f"fisher remove {name}" for name in removes]
-        parts.append(f"rm -f {files}")
-        if choice[0] == "builtin":
-            parts.append(f"echo y | fish_config prompt save {choice[1]}")
-        elif choice[0] == "framework":
-            parts.append(f"fisher install {choice[1]}")
-        return "; ".join(parts)
 
-    ftt_fisher.run_async(build, on_done, snapshot)
+def set_prompt_async(choice, frameworks, on_done, snapshot=True):
+    """Apply a single prompt exclusively off the UI thread; call on_done(Result)."""
+    ftt_fisher.run_async(lambda: build_command(choice, frameworks), on_done, snapshot)
