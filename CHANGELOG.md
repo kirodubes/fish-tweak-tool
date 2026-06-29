@@ -34,7 +34,7 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   (the fish theme and the terminal palette are now both visible there).
 - **Selecting an ASCII-art tool now switches the greeting to "Custom text".** Picking a tool
   (figlet/toilet/cowsay/botsay) from the dropdown while the mode was still "Keep current" meant
-  Apply ignored the art entirely (`mode \!= custom`) and never checked the tool was installed.
+  Apply ignored the art entirely (`mode != custom`) and never checked the tool was installed.
   The dropdown now auto-selects the **Custom text** radio, so the art renders and the
   install-check fires.
 - **Bigger, 2-column built-in prompt cards.** The Prompt tab's built-in style gallery went
