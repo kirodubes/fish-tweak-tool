@@ -1464,7 +1464,7 @@ class SettingsTab(_StatusMixin):
 
         first = None
         for key, label in (
-            ("keep", "Keep current"),
+            ("keep", "System default"),
             ("off", "No greeting"),
             ("fastfetch", "Show fastfetch on launch"),
             ("custom", "Custom text"),
@@ -1721,7 +1721,7 @@ class SettingsTab(_StatusMixin):
 _GIT_ABBR_PLUGIN = "jhillyerd/plugin-git"
 
 # Greeting mode → overview label.
-_GREETING_LABELS = {"keep": "unchanged", "off": "none", "fastfetch": "fastfetch", "custom": "custom"}
+_GREETING_LABELS = {"keep": "system default", "off": "none", "fastfetch": "fastfetch", "custom": "custom"}
 
 # Current-setup overview rows: (prefs/derived key, caption).
 _OVERVIEW_ROWS = [
