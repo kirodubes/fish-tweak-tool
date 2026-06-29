@@ -101,20 +101,6 @@ def swatch_colors(palette):
     return background, bars
 
 
-def current_scheme():
-    """Return the id of the last-applied tinty scheme, or None."""
-    if not is_available():
-        return None
-    try:
-        proc = subprocess.run(
-            ["tinty", "current"], capture_output=True, text=True, timeout=10
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
-    out = proc.stdout.strip()
-    return out if proc.returncode == 0 and out else None
-
-
 def is_configured():
     """Return True if config.toml already has a tinted-shell item."""
     if not os.path.isfile(CONFIG):
@@ -123,8 +109,26 @@ def is_configured():
         return bool(_HAS_ITEM_RE.search(f.read()))
 
 
+def _migrate_unsafe_hook():
+    """Rewrite a previously-written unsafe `fish %f` hook to the safe `scripts` setup.
+
+    An earlier version used the `fish` themes-dir, whose `fish %f` hook deadlocks fish
+    at startup (it re-sources config.fish → `tinty init` → uvar-lock). Upgrade it in place.
+    """
+    if not os.path.isfile(CONFIG):
+        return
+    with open(CONFIG, encoding="utf-8") as f:
+        content = f.read()
+    if 'hook = "fish %f"' not in content and 'themes-dir = "fish"' not in content:
+        return
+    fixed = content.replace('themes-dir = "fish"', 'themes-dir = "scripts"').replace('hook = "fish %f"', 'hook = ". %f"')
+    with open(CONFIG, "w", encoding="utf-8") as f:
+        f.write(fixed)
+
+
 def ensure_config():
     """Add our tinted-shell item to config.toml if absent (preserving any others)."""
+    _migrate_unsafe_hook()
     if is_configured():
         return
     os.makedirs(os.path.dirname(CONFIG), exist_ok=True)

@@ -1183,7 +1183,10 @@ class PalettesTab(_StatusMixin):
         self._content.append(sync)
 
     def _render_gallery(self):
-        self._current = ftt_tinty.current_scheme()
+        # "Current" = what FIT actually keeps in config.fish (the managed flag + scheme),
+        # not tinty's own last-applied — so it goes blank when a preset/remove drops the line.
+        prefs = ftt_config.load_prefs()
+        self._current = prefs.get("current_tinty_scheme") if prefs.get("tinty") else None
 
         filters = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         search = Gtk.SearchEntry()
@@ -1857,16 +1860,16 @@ class PresetsTab(_StatusMixin):
     def _refresh_overview(self, *_args):
         def worker():
             installed = ftt_fisher.list_installed()
-            palette = ftt_tinty.current_scheme()  # subprocess — keep off the UI thread
-            GLib.idle_add(self._fill_overview, installed, palette)
+            GLib.idle_add(self._fill_overview, installed)
 
         threading.Thread(target=worker, daemon=True).start()
 
-    def _fill_overview(self, installed, palette):
+    def _fill_overview(self, installed):
         prefs = ftt_config.load_prefs()
         consensus = _consensus_installed(installed)
         git_on = _GIT_ABBR_PLUGIN.lower() in {p.lower() for p in installed}
         count = len(prefs.get("abbreviations", []))
+        palette = prefs.get("current_tinty_scheme") if prefs.get("tinty") else None
         self._ov_labels["prompt"].set_text(_prompt_label(prefs))
         self._ov_labels["theme"].set_text(prefs.get("current_theme") or "default")
         self._ov_labels["palette"].set_text(palette or "none")

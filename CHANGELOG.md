@@ -36,6 +36,14 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   Now: **applying any of the 3 presets** (Kiro/Minimal/Full) clears the tinty flag and drops
   the line — a preset is a whole-look reset with no palette, so it shouldn't carry one over;
   and **Remove tinty** rewrites the managed block without the line once the package is gone.
+- **Consistency pass on palette state.** The "current palette" shown on the Palettes tab and
+  in the Presets overview now reflects what FIT actually keeps in config.fish (the `tinty`
+  flag + recorded scheme), not tinty's own last-applied — so it goes blank the moment a preset
+  or Remove drops the line (previously it kept showing a palette that was no longer applied).
+  This also makes `current_tinty_scheme` a read pref (it was written but never read) and
+  retires the now-unused `ftt_tinty.current_scheme()`. Plus `ensure_config()` now **migrates**
+  a leftover unsafe `hook = "fish %f"` config.toml to the safe `scripts` setup, so the
+  deadlock can't resurface from an old config.
 - **Selecting an ASCII-art tool now switches the greeting to "Custom text".** Picking a tool
   (figlet/toilet/cowsay/botsay) from the dropdown while the mode was still "Keep current" meant
   Apply ignored the art entirely (`mode != custom`) and never checked the tool was installed.
