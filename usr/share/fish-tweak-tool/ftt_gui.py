@@ -1489,7 +1489,7 @@ class SettingsTab(_StatusMixin):
         art_row.append(art_label)
         self._gen_tool = Gtk.DropDown.new_from_strings(_GREETING_TOOLS)
         self._gen_tool.set_selected(_GREETING_INDEX_BY_TOOL.get(saved.get("tool", "none"), 0))
-        self._gen_tool.connect("notify::selected", lambda *_a: self._refresh_fonts())
+        self._gen_tool.connect("notify::selected", self._on_tool_changed)
         art_row.append(self._gen_tool)
         self._gen_font = Gtk.DropDown.new_from_strings(["(none)"])
         self._gen_font.set_hexpand(True)
@@ -1519,6 +1519,14 @@ class SettingsTab(_StatusMixin):
 
     def _current_tool(self):
         return _GREETING_TOOL_BY_INDEX.get(self._gen_tool.get_selected(), "none")
+
+    def _on_tool_changed(self, *_args):
+        # Picking an ASCII-art tool only makes sense for a custom greeting, so switch the
+        # mode to "Custom text" — otherwise Apply ignores the art (mode != custom) and never
+        # checks the tool is installed.
+        if self._current_tool() != "none":
+            self._greeting_radios["custom"].set_active(True)
+        self._refresh_fonts()
 
     def _refresh_fonts(self):
         tool = self._current_tool()
