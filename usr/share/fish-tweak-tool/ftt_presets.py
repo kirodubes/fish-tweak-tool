@@ -110,6 +110,11 @@ def apply_preset_async(preset, frameworks, on_done):
         # abbreviations from the shared managed block.
         prefs = ftt_config.load_prefs()
         prefs["greeting"] = preset.get("greeting", {"mode": "keep"})
+        # A preset is a whole-look reset and ships no terminal palette, so drop any
+        # tinty palette: clear the flag (removes the `tinty init` line from the block)
+        # and the recorded scheme.
+        prefs["tinty"] = False
+        prefs.pop("current_tinty_scheme", None)
         ftt_managed.write_block(ftt_managed.settings_from_prefs(prefs))
         ok, message = ftt_fisher.run_visibly(_build_command(preset, frameworks))
         if ok:

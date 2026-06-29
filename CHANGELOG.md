@@ -32,6 +32,10 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   named accents (and `black-dim` for the background).
 - **Presets "Current setup" overview gained a Palette row** showing the live `tinty current`
   (the fish theme and the terminal palette are now both visible there).
+- **The `tinty init` line can now be removed from config.fish.** It used to persist once set.
+  Now: **applying any of the 3 presets** (Kiro/Minimal/Full) clears the tinty flag and drops
+  the line — a preset is a whole-look reset with no palette, so it shouldn't carry one over;
+  and **Remove tinty** rewrites the managed block without the line once the package is gone.
 - **Selecting an ASCII-art tool now switches the greeting to "Custom text".** Picking a tool
   (figlet/toilet/cowsay/botsay) from the dropdown while the mode was still "Keep current" meant
   Apply ignored the art entirely (`mode != custom`) and never checked the tool was installed.

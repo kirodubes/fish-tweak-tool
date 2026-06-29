@@ -1322,7 +1322,15 @@ class PalettesTab(_StatusMixin):
             return
         self._busy = True
         self._set_status("Removing tinty…")
-        ftt_tinty.remove_package_async(lambda _r: GLib.idle_add(self._setup_finished))
+        ftt_tinty.remove_package_async(lambda _r: GLib.idle_add(self._removed_finished))
+
+    def _removed_finished(self):
+        # If tinty is actually gone, drop the `tinty init` line from config.fish too
+        # (clear the flag + recorded scheme, then rewrite the managed block).
+        if not ftt_tinty.is_available():
+            prefs = ftt_config.update_prefs({"tinty": False, "current_tinty_scheme": None})
+            ftt_managed.write_block(ftt_managed.settings_from_prefs(prefs))
+        return self._setup_finished()
 
     def _setup_finished(self):
         self._busy = False
