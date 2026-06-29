@@ -28,13 +28,16 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   apply last wins; the tinty section carries its own live "current" indicator from
   `tinty current`.
 
-- **Managed-block persistence for the terminal palette.** The `fish_color_*` universals
-  persist automatically, but the terminal ANSI palette is per-session, so a `tinty` flag was
-  added to `ftt_managed.settings_from_prefs`/`render_block` (mirroring the `starship` flag):
-  applying a palette writes `type -q tinty; and tinty init` into the managed block so the
-  palette re-applies in every new shell. The apply path read-modify-writes full prefs via
-  `ftt_config.update_prefs` then rewrites the whole block (never a partial dict — that would
-  wipe greeting/abbreviations).
+- **Persistence is via fish universals only — no `config.fish` changes.** Applying a scheme
+  records `current_tinty_scheme` in prefs for the "current" indicator; the colours themselves
+  persist because the tinted-shell fish script sets `fish_color_*` as **universals** (`set -U`),
+  which survive new sessions on their own. We deliberately do **not** write a `tinty init` line
+  into the managed block: running `tinty init` during fish startup **deadlocks** — config.fish
+  loads while fish holds the universal-variable lock, and tinty's `fish %f` hook spawns a child
+  fish that also needs that lock (`futex_wait`), hanging every new shell (and so alacritty).
+  The trade-off: the terminal's per-session ANSI palette isn't re-applied in new shells, so an
+  applied scheme's ANSI-named colours render against the terminal's own palette until that's
+  themed too. A safe per-session palette hook is a possible follow-up.
 
 ### Technical Details
 

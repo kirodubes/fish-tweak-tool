@@ -1233,8 +1233,10 @@ class ThemesTab(_StatusMixin):
                 self._tinty_rows[self._tinty_current].remove_css_class("theme-current")
             self._tinty_rows[scheme["id"]].add_css_class("theme-current")
             self._tinty_current = scheme["id"]
-            prefs = ftt_config.update_prefs({"tinty": True, "current_tinty_scheme": scheme["id"]})
-            ftt_managed.write_block(ftt_managed.settings_from_prefs(prefs))
+            # fish_color_* universals persist on their own; we record only the choice for
+            # the "current" indicator. We deliberately do NOT add `tinty init` to config.fish
+            # — running it during fish startup deadlocks on the universal-variable lock.
+            ftt_config.update_prefs({"current_tinty_scheme": scheme["id"]})
             self._set_status(f"Palette '{scheme['name']}' applied. Open a new shell to see it.")
         else:
             detail = result.message or "see terminal for details"
