@@ -25,6 +25,9 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   named accents (and `black-dim` for the background).
 - **Presets "Current setup" overview gained a Palette row** showing the live `tinty current`
   (the fish theme and the terminal palette are now both visible there).
+- **Bigger, 2-column built-in prompt cards.** The Prompt tab's built-in style gallery went
+  from up to 4 cramped columns (preview ellipsized at 28 chars) to **2 wider, taller cards**
+  (70px min height, preview up to 44 chars), so much more of each prompt sample is readable.
 
 - **It recolours the terminal's ANSI palette, re-applied in every new shell.** FIT writes
   tinty's `~/.config/tinted-theming/tinty/config.toml` (preserving any existing user items)

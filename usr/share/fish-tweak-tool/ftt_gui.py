@@ -678,7 +678,7 @@ class PromptTab(_StatusMixin):
             return page
         flow = Gtk.FlowBox()
         flow.set_selection_mode(Gtk.SelectionMode.NONE)
-        flow.set_max_children_per_line(4)
+        flow.set_max_children_per_line(2)
         flow.set_column_spacing(10)
         flow.set_row_spacing(10)
         flow.set_homogeneous(True)
@@ -692,11 +692,13 @@ class PromptTab(_StatusMixin):
     def _make_card(self, name):
         button = Gtk.Button()
         button.add_css_class("theme-card")
-        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        button.set_size_request(-1, 70)  # taller cards — room for the prompt preview
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        content.set_valign(Gtk.Align.CENTER)
         sample = Gtk.Label(xalign=0)
         sample.add_css_class("theme-preview")
         sample.set_ellipsize(3)  # Pango.EllipsizeMode.END
-        sample.set_max_width_chars(28)
+        sample.set_max_width_chars(44)  # wider than before, but lets two cards fit per row
         sample.set_markup(f"<tt><span background='#1d1f21'> {GLib.markup_escape_text(name)} … </span></tt>")
         self._sample_labels[name] = sample
         content.append(sample)
