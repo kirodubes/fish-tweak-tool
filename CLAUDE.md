@@ -24,7 +24,7 @@ sudo) and ships in `nemesis_repo`. ATT's Shells → Fish tab will deep-link to i
 ```
 usr/share/fish-tweak-tool/
 ├── fish-tweak-tool.py   # Entry point: Gtk.Application + Main window
-├── ftt_gui.py           # GUI: six-tab Notebook (Presets · Plugins · Prompt · Themes · Abbreviations · Settings)
+├── ftt_gui.py           # GUI: seven-tab Notebook (Presets · Plugins · Prompt · Themes · Palettes · Abbreviations · Settings)
 ├── ftt_presets.py       # M4 presets: one-click bundles (prompt + plugins + theme + greeting)
 ├── ftt_fisher.py        # M1 orchestration: fisher install/remove + snapshot
 ├── ftt_prompt.py        # M1 prompt selection: one set_prompt_async (default/built-in/framework)
@@ -100,21 +100,26 @@ wrong silently clobbers user settings:
   gallery's `default` card is fish's plain prompt (applied via the `("default",)`
   reset). Starship deferred to presets.
 - **M2** — Theme gallery from `fish_config theme`. **Done** (card gallery,
-  swatches, apply, current indicator, reset). The Themes tab also has a second
-  section, **"More palettes — base16 & base24 (via tinty)"**: a searchable,
+  swatches, apply, current indicator, reset). Themes owns fish's `fish_color_*`
+  syntax theme only.
+- **Palettes tab** (`PalettesTab`, between Themes and Abbreviations) — a searchable,
   system/variant-filtered list of 500+ tinted-theming palettes orchestrated through
   the `tinty` CLI (`ftt_tinty.py`). FIT writes tinty's `config.toml` using tinty's
   **official `scripts` setup** (`themes-dir = "scripts"`, `hook = ". %f"`), so an applied
   scheme recolours the terminal's 16-colour ANSI palette + background (OSC) — a layer
-  independent of fish's own `fish_color_*` syntax theme (the native gallery). Apply runs
-  `tinty install` + `tinty apply <id>` visibly; the `tinty` prefs flag makes the managed
-  block emit `type -q tinty; and tinty init` so the palette re-applies each new shell.
+  independent of fish's `fish_color_*` syntax theme. Apply runs `tinty install` +
+  `tinty apply <id>` visibly; the `tinty` prefs flag makes the managed block emit
+  `type -q tinty; and tinty init` so the palette re-applies each new shell.
   **Never switch tinty to the `fish` themes-dir (`hook = "fish %f"`)**: that hook spawns a
   fish that re-sources config.fish, so `tinty init` recurses and **deadlocks** on fish's
   universal-variable lock (`futex_wait`) — hanging every new shell and Alacritty. See
-  [[tinty-init-deadlocks-fish]]. tinty is an optdepend — the section shows a muted install
-  note when it's absent, and an explanatory note when tinty returns no schemes (e.g.
-  launched via sudo, so tinty reads root's empty data dir).
+  [[tinty-init-deadlocks-fish]]. The tab has an **Install/Remove tinty** button
+  (`tinty-git` via visible-terminal pacman; `_render()` rebuilds install-button↔gallery on
+  completion), shows an explanatory note when tinty returns no schemes (e.g. launched via
+  sudo → root's empty data dir), and tinty is an optdepend. **Swatches:** base16/base24 use
+  `base08`–`base0E`; tinted8 schemes have no `base00`/`base0x` keys — they use named keys
+  (`red-normal`, …), handled in `swatch_colors`. The Presets "Current setup" overview has a
+  **Palette** row showing the live `tinty current`.
 - **M3** — Greeting + backup-restore of `~/.config/fish/`. **Done**
   (managed-block greeting, backup/restore panel). Cursor shape was dropped — it's
   the terminal's job (Alacritty), and fish only honours `fish_cursor_*` in vi mode.

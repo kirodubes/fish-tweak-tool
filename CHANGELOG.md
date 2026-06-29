@@ -6,17 +6,25 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
 
 ### What Changed
 
-- **New "More palettes — base16 & base24 (via tinty)" section on the Themes tab.**
-  The native `fish_config theme` gallery is kept exactly as-is; below it sits a second
-  section that reaches 500+ extra palettes from [tinted-theming](https://github.com/tinted-theming/tinty)
-  — the maintained successor to the now-archived `base16-fish-shell` (archived Apr 2025).
-  It's a searchable list (`Gtk.SearchEntry`) with **system** (base16/base24/tinted8) and
-  **variant** (dark/light) dropdown filters; each row shows a colour swatch strip, the
-  scheme name, and its system·variant. Click a scheme to apply it. tinty is an optional
-  dependency — when it isn't installed the section shows a muted "install tinty" note and
-  nothing else, so the tab degrades cleanly. If tinty is present but returns no palettes
-  (e.g. the app was launched with sudo, so tinty reads root's empty data dir instead of
-  yours), the section now shows an explanatory note rather than a blank list.
+- **New dedicated "Palettes" tab** (between Themes and Abbreviations) reaching 500+
+  palettes from [tinted-theming](https://github.com/tinted-theming/tinty) — the maintained
+  successor to the now-archived `base16-fish-shell` (archived Apr 2025). The native
+  `fish_config theme` gallery on the Themes tab is untouched. It's a full-height searchable
+  list (`Gtk.SearchEntry`) with **system** (base16/base24/tinted8) and **variant** (dark/light)
+  filters; each row shows a colour swatch strip, the scheme name, and its system·variant.
+  Click a scheme to apply it. (Started as a cramped section under the Themes gallery; promoted
+  to its own tab so it has room.)
+- **Install / remove tinty from the tab.** When tinty isn't installed the tab shows an
+  **Install tinty** button (`sudo pacman -S --needed tinty-git` in a visible terminal); when
+  it is, a **Remove tinty** button sits in the header. Either action rebuilds the tab
+  (install-button ↔ gallery) when it finishes. Launched via sudo (so tinty reads root's empty
+  data dir → no schemes), the tab shows an explanatory "run as your normal user" note.
+- **tinted8 swatches fixed (were black).** tinted8 schemes have no `base00`/`base0x` keys —
+  they use named keys (`red-normal`, `blue-normal`, …), so the base16 swatch logic found no
+  colours. `swatch_colors` now branches: base16/base24 use `base08`–`base0E`, tinted8 uses the
+  named accents (and `black-dim` for the background).
+- **Presets "Current setup" overview gained a Palette row** showing the live `tinty current`
+  (the fish theme and the terminal palette are now both visible there).
 
 - **It recolours the terminal's ANSI palette, re-applied in every new shell.** FIT writes
   tinty's `~/.config/tinted-theming/tinty/config.toml` (preserving any existing user items)

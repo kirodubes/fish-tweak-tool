@@ -32,6 +32,9 @@ import ftt_fisher
 
 CONFIG = os.path.expanduser("~/.config/tinted-theming/tinty/config.toml")
 
+# nemesis_repo ships tinty as `tinty-git`.
+PACKAGE = "tinty-git"
+
 _TINTED_SHELL_ITEM = (
     '[[items]]\n'
     'path = "https://github.com/tinted-theming/tinted-shell"\n'
@@ -42,9 +45,10 @@ _TINTED_SHELL_ITEM = (
 
 _HAS_ITEM_RE = re.compile(r'name\s*=\s*"tinted-shell"')
 
-# fish_color bars shown in a card swatch, in display order: red, yellow, green,
-# cyan, blue, magenta (the base16 accent colours).
-_SWATCH_BASES = ["base08", "base0A", "base0B", "base0C", "base0D", "base0E"]
+# Swatch accent bars (red, yellow, green, cyan, blue, magenta). base16/base24 use
+# base08–base0E; tinted8 schemes instead carry named keys (red-normal, …).
+_BASE16_BARS = ["base08", "base0A", "base0B", "base0C", "base0D", "base0E"]
+_TINTED8_BARS = ["red-normal", "yellow-normal", "green-normal", "cyan-normal", "blue-normal", "magenta-normal"]
 
 _schemes_cache = None
 
@@ -61,11 +65,10 @@ def list_schemes():
     and cached for the process; returns [] if tinty is missing or errors.
     """
     global _schemes_cache
-    if _schemes_cache is not None:
+    if _schemes_cache:  # cache only non-empty results, so a retry after install re-queries
         return _schemes_cache
     if not is_available():
-        _schemes_cache = []
-        return _schemes_cache
+        return []
     try:
         proc = subprocess.run(
             ["tinty", "list", "--json"], capture_output=True, text=True, timeout=30
@@ -89,8 +92,12 @@ def list_schemes():
 
 def swatch_colors(palette):
     """Return (background_hex, [bar_hex, ...]) for a scheme's palette dict."""
-    background = palette.get("base00")
-    bars = [palette[b] for b in _SWATCH_BASES if b in palette]
+    if "base00" in palette:  # base16 / base24
+        background = palette.get("base00")
+        bars = [palette[b] for b in _BASE16_BARS if b in palette]
+    else:  # tinted8 — named keys, no base00
+        background = palette.get("black-dim") or palette.get("black-normal")
+        bars = [palette[b] for b in _TINTED8_BARS if b in palette]
     return background, bars
 
 
@@ -134,3 +141,13 @@ def setup_and_apply_async(scheme_id, on_done):
     """Ensure config, then install (idempotent) + apply a scheme visibly."""
     ensure_config()
     ftt_fisher.run_async(f"tinty install; and tinty apply {scheme_id}", on_done, snapshot=True)
+
+
+def install_package_async(on_done):
+    """Install the tinty package via pacman in a visible terminal."""
+    ftt_fisher.run_async(f"sudo pacman -S --needed {PACKAGE}", on_done, snapshot=False)
+
+
+def remove_package_async(on_done):
+    """Remove the tinty package via pacman in a visible terminal."""
+    ftt_fisher.run_async(f"sudo pacman -Rns {PACKAGE}", on_done, snapshot=False)
