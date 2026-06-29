@@ -14,7 +14,9 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   **variant** (dark/light) dropdown filters; each row shows a colour swatch strip, the
   scheme name, and its system·variant. Click a scheme to apply it. tinty is an optional
   dependency — when it isn't installed the section shows a muted "install tinty" note and
-  nothing else, so the tab degrades cleanly.
+  nothing else, so the tab degrades cleanly. If tinty is present but returns no palettes
+  (e.g. the app was launched with sudo, so tinty reads root's empty data dir instead of
+  yours), the section now shows an explanatory note rather than a blank list.
 
 - **It recolours fish syntax highlighting *and* the terminal palette.** FIT writes tinty's
   `~/.config/tinted-theming/tinty/config.toml` (preserving any existing user items) to point

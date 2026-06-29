@@ -1126,6 +1126,16 @@ class ThemesTab(_StatusMixin):
             box.append(note)
             return box
 
+        schemes = ftt_tinty.list_schemes()
+        if not schemes:
+            note = _intro(
+                "tinty is installed but returned no palettes. Run this app as your normal "
+                "user (not with sudo) so tinty can find your schemes."
+            )
+            note.add_css_class("muted")
+            box.append(note)
+            return box
+
         self._tinty_current = ftt_tinty.current_scheme()
 
         filters = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -1147,7 +1157,7 @@ class ThemesTab(_StatusMixin):
         listbox.add_css_class("plugin-list")
         listbox.set_filter_func(self._tinty_filter)
         listbox.connect("row-activated", self._on_tinty_row_activated)
-        for scheme in ftt_tinty.list_schemes():
+        for scheme in schemes:
             row = self._make_tinty_row(scheme)
             self._tinty_rows[scheme["id"]] = row
             listbox.append(row)
