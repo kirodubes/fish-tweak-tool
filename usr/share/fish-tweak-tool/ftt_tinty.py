@@ -1,19 +1,25 @@
 """Tinty orchestration for fish-tweak-tool (extra base16/base24 palettes).
 
-`tinty` (tinted-theming's Rust CLI) themes the terminal across apps. Its
-tinted-shell *fish* template sets both the terminal ANSI palette (OSC, per
-session) and `fish_color_*` universals (persisted), so applying a scheme
-recolours fish syntax highlighting like the native `fish_config theme` gallery,
-plus the terminal palette. This module drives `tinty` to add 500+ palettes the
-bundled gallery doesn't ship; it stays toolkit-free (no GTK) so it is testable.
+`tinty` (tinted-theming's Rust CLI) themes the terminal across apps. We use it to
+recolour the terminal's 16-colour ANSI palette + background (OSC escape codes),
+which affects everything in the terminal — a layer on top of, and independent of,
+fish's own `fish_color_*` syntax theme (the native gallery). This module drives
+`tinty` to add 500+ base16/base24 palettes; it stays toolkit-free (no GTK) so it
+is testable. The palette re-applies per shell via `tinty init` in the managed block.
 
-The config we manage points tinty at the per-scheme `fish/` scripts:
+The config we manage uses tinty's official shell setup — the POSIX `scripts`
+(`. %f`), which emit only the terminal's ANSI palette (OSC) via `sh`:
 
     [[items]]
     path = "https://github.com/tinted-theming/tinted-shell"
     name = "tinted-shell"
-    themes-dir = "fish"
-    hook = "fish %f"
+    themes-dir = "scripts"
+    hook = ". %f"
+
+We deliberately do NOT use the `fish` themes-dir (`hook = "fish %f"`): that hook
+spawns a fish that re-sources config.fish, so a `tinty init` line there recurses
+and deadlocks on fish's universal-variable lock. The `scripts` hook runs under
+`sh`, sets no fish universals, and is safe to `tinty init` from config.fish.
 """
 
 import json
@@ -30,8 +36,8 @@ _TINTED_SHELL_ITEM = (
     '[[items]]\n'
     'path = "https://github.com/tinted-theming/tinted-shell"\n'
     'name = "tinted-shell"\n'
-    'themes-dir = "fish"\n'
-    'hook = "fish %f"\n'
+    'themes-dir = "scripts"\n'
+    'hook = ". %f"\n'
 )
 
 _HAS_ITEM_RE = re.compile(r'name\s*=\s*"tinted-shell"')

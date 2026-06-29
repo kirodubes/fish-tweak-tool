@@ -1114,9 +1114,10 @@ class ThemesTab(_StatusMixin):
         box.append(_section("More palettes — base16 & base24 (via tinty)"))
         box.append(
             _intro(
-                "500+ extra palettes from tinted-theming. Applying one recolours fish's "
-                "syntax highlighting (like the gallery above) and your terminal's colour "
-                "palette. Whichever you apply last wins. Open a new shell to see it."
+                "500+ extra palettes from tinted-theming. Applying one recolours your "
+                "terminal's 16-colour ANSI palette and background — affecting everything "
+                "in the terminal (ls, git, vim …), and re-applied in every new shell. "
+                "This is a separate layer that sits on top of the fish theme above."
             )
         )
 
@@ -1233,10 +1234,12 @@ class ThemesTab(_StatusMixin):
                 self._tinty_rows[self._tinty_current].remove_css_class("theme-current")
             self._tinty_rows[scheme["id"]].add_css_class("theme-current")
             self._tinty_current = scheme["id"]
-            # fish_color_* universals persist on their own; we record only the choice for
-            # the "current" indicator. We deliberately do NOT add `tinty init` to config.fish
-            # — running it during fish startup deadlocks on the universal-variable lock.
-            ftt_config.update_prefs({"current_tinty_scheme": scheme["id"]})
+            # Persist the palette across shells: set the tinty flag so the managed block
+            # emits `tinty init` (safe with tinty's `scripts` hook — runs under sh, no fish
+            # set -U, no uvar-lock deadlock). Read-modify-write full prefs then rewrite the
+            # whole block (never a partial dict — that would wipe greeting/abbreviations).
+            prefs = ftt_config.update_prefs({"tinty": True, "current_tinty_scheme": scheme["id"]})
+            ftt_managed.write_block(ftt_managed.settings_from_prefs(prefs))
             self._set_status(f"Palette '{scheme['name']}' applied. Open a new shell to see it.")
         else:
             detail = result.message or "see terminal for details"

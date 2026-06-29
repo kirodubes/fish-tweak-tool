@@ -18,26 +18,27 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   (e.g. the app was launched with sudo, so tinty reads root's empty data dir instead of
   yours), the section now shows an explanatory note rather than a blank list.
 
-- **It recolours fish syntax highlighting *and* the terminal palette.** FIT writes tinty's
-  `~/.config/tinted-theming/tinty/config.toml` (preserving any existing user items) to point
-  at tinted-shell's per-scheme **`fish`** scripts with `hook = "fish %f"`. Those scripts set
-  `fish_color_*` **universals** (so the syntax colours change like the native gallery and
-  persist on their own) as well as the terminal's 16-colour ANSI palette. Apply runs
-  `tinty install` (idempotent) + `tinty apply <id>` in a **visible terminal** (no black box,
-  same path as every other mutation). The two layers share `fish_color_*`, so whichever you
-  apply last wins; the tinty section carries its own live "current" indicator from
-  `tinty current`.
+- **It recolours the terminal's ANSI palette, re-applied in every new shell.** FIT writes
+  tinty's `~/.config/tinted-theming/tinty/config.toml` (preserving any existing user items)
+  using tinty's **official shell setup** — the POSIX **`scripts`** dir with `hook = ". %f"`.
+  Those scripts emit only the terminal's 16-colour ANSI palette + background (OSC escape
+  codes), which recolours everything in the terminal (ls, git, vim …). It's a layer that
+  sits on top of, and independent of, fish's own `fish_color_*` syntax theme (the native
+  gallery) — no shared state, no conflict. Apply runs `tinty install` (idempotent) +
+  `tinty apply <id>` in a **visible terminal** (no black box). The section carries a live
+  "current" indicator from `tinty current`.
 
-- **Persistence is via fish universals only — no `config.fish` changes.** Applying a scheme
-  records `current_tinty_scheme` in prefs for the "current" indicator; the colours themselves
-  persist because the tinted-shell fish script sets `fish_color_*` as **universals** (`set -U`),
-  which survive new sessions on their own. We deliberately do **not** write a `tinty init` line
-  into the managed block: running `tinty init` during fish startup **deadlocks** — config.fish
-  loads while fish holds the universal-variable lock, and tinty's `fish %f` hook spawns a child
-  fish that also needs that lock (`futex_wait`), hanging every new shell (and so alacritty).
-  The trade-off: the terminal's per-session ANSI palette isn't re-applied in new shells, so an
-  applied scheme's ANSI-named colours render against the terminal's own palette until that's
-  themed too. A safe per-session palette hook is a possible follow-up.
+- **Persistence via a safe `tinty init` line in the managed block.** Applying a scheme sets a
+  `tinty` flag in prefs (read-modify-write, then the whole block is rewritten — never a partial
+  dict that would wipe greeting/abbreviations), which emits `type -q tinty; and tinty init`
+  into config.fish so the palette re-applies on each new shell. This is safe **only** with the
+  `scripts` hook (`. %f` runs under `sh`). **Hard-won lesson:** an earlier attempt used the
+  `fish` themes-dir (`hook = "fish %f"`, which also set `fish_color_*` universals) — but tinty's
+  `fish %f` hook spawns a fish that *re-sources config.fish*, so `tinty init` there recurses and
+  **deadlocks** on fish's universal-variable lock (`futex_wait`), hanging every new shell and
+  Alacritty. Verified in a clean room that the `scripts` setup does not deadlock and that a new
+  terminal picks up the palette. Also: the app must run as the normal user — under `sudo` tinty
+  reads root's empty data dir, so the list shows an explanatory note instead of 500 palettes.
 
 ### Technical Details
 

@@ -103,19 +103,18 @@ wrong silently clobbers user settings:
   swatches, apply, current indicator, reset). The Themes tab also has a second
   section, **"More palettes — base16 & base24 (via tinty)"**: a searchable,
   system/variant-filtered list of 500+ tinted-theming palettes orchestrated through
-  the `tinty` CLI (`ftt_tinty.py`). FIT writes tinty's `config.toml` pointing at the
-  tinted-shell **`fish`** themes-dir (`hook = "fish %f"`), so an applied scheme sets
-  `fish_color_*` universals (syntax highlighting, like the native gallery) *and* the
-  terminal ANSI palette. Apply runs `tinty install` + `tinty apply <id>` visibly. The
-  `fish_color_*` are `set -U` universals so they persist across sessions on their own —
-  FIT records only `current_tinty_scheme` in prefs and writes **nothing** to config.fish.
-  **Do not add `tinty init` to config.fish / the managed block**: it deadlocks fish at
-  startup (config.fish runs while fish holds the universal-variable lock; tinty's `fish %f`
-  hook spawns a child fish that needs the same lock → `futex_wait` hang → every new shell,
-  and alacritty, hangs). The cost is that the per-session terminal ANSI palette isn't
-  re-applied in new shells. tinty is an optdepend — the section shows a muted install note
-  when it's absent, and an explanatory note when tinty returns no schemes (e.g. launched
-  via sudo, so tinty reads root's empty data dir).
+  the `tinty` CLI (`ftt_tinty.py`). FIT writes tinty's `config.toml` using tinty's
+  **official `scripts` setup** (`themes-dir = "scripts"`, `hook = ". %f"`), so an applied
+  scheme recolours the terminal's 16-colour ANSI palette + background (OSC) — a layer
+  independent of fish's own `fish_color_*` syntax theme (the native gallery). Apply runs
+  `tinty install` + `tinty apply <id>` visibly; the `tinty` prefs flag makes the managed
+  block emit `type -q tinty; and tinty init` so the palette re-applies each new shell.
+  **Never switch tinty to the `fish` themes-dir (`hook = "fish %f"`)**: that hook spawns a
+  fish that re-sources config.fish, so `tinty init` recurses and **deadlocks** on fish's
+  universal-variable lock (`futex_wait`) — hanging every new shell and Alacritty. See
+  [[tinty-init-deadlocks-fish]]. tinty is an optdepend — the section shows a muted install
+  note when it's absent, and an explanatory note when tinty returns no schemes (e.g.
+  launched via sudo, so tinty reads root's empty data dir).
 - **M3** — Greeting + backup-restore of `~/.config/fish/`. **Done**
   (managed-block greeting, backup/restore panel). Cursor shape was dropped — it's
   the terminal's job (Alacritty), and fish only honours `fish_cursor_*` in vi mode.
