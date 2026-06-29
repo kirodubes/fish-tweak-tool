@@ -1139,7 +1139,7 @@ class PalettesTab(_StatusMixin):
         if ftt_tinty.is_available():
             remove = Gtk.Button(label="Remove tinty")
             remove.add_css_class("destructive-action")
-            remove.connect("clicked", lambda _b: self._package_action(ftt_tinty.remove_package_async, "Removing tinty…"))
+            remove.connect("clicked", lambda _b: self._remove_tinty())
             header.append(remove)
         self._content.append(header)
 
@@ -1155,12 +1155,7 @@ class PalettesTab(_StatusMixin):
         if not ftt_tinty.is_available():
             self._render_install()
         elif not ftt_tinty.list_schemes():
-            note = _intro(
-                "tinty is installed but returned no palettes. Run this app as your normal "
-                "user (not with sudo) so tinty can find your schemes."
-            )
-            note.add_css_class("muted")
-            self._content.append(note)
+            self._render_sync()
         else:
             self._render_gallery()
 
@@ -1173,8 +1168,19 @@ class PalettesTab(_StatusMixin):
         install = Gtk.Button(label="Install tinty")
         install.add_css_class("suggested-action")
         install.set_halign(Gtk.Align.START)
-        install.connect("clicked", lambda _b: self._package_action(ftt_tinty.install_package_async, "Installing tinty…"))
+        install.connect("clicked", lambda _b: self._install_tinty())
         self._content.append(install)
+
+    def _render_sync(self):
+        # tinty is installed but its schemes aren't cloned yet (fresh install).
+        note = _intro("tinty is installed, but its palettes haven't been downloaded yet.")
+        note.add_css_class("muted")
+        self._content.append(note)
+        sync = Gtk.Button(label="Download palettes")
+        sync.add_css_class("suggested-action")
+        sync.set_halign(Gtk.Align.START)
+        sync.connect("clicked", lambda _b: self._sync_palettes())
+        self._content.append(sync)
 
     def _render_gallery(self):
         self._current = ftt_tinty.current_scheme()
@@ -1287,21 +1293,40 @@ class PalettesTab(_StatusMixin):
             self._set_status(f"Could not apply {scheme['name']}: {detail}", error=True)
         return False
 
-    # ── install / remove tinty itself ─────────────────────────────────────────
-    def _package_action(self, action, busy_text):
+    # ── install / sync / remove tinty itself ──────────────────────────────────
+    def _install_tinty(self):
+        # Install the package, then download schemes, then rebuild — one flow, so a
+        # fresh box goes straight to a working gallery.
         if self._busy:
             return
         self._busy = True
-        self._set_status(busy_text)
+        self._set_status("Installing tinty…")
+        ftt_tinty.install_package_async(lambda _r: GLib.idle_add(self._after_install))
 
-        def on_done(_result):
-            GLib.idle_add(self._package_action_finished)
+    def _after_install(self):
+        if not ftt_tinty.is_available():  # install declined / failed — back to the button
+            return self._setup_finished()
+        self._set_status("Downloading palettes…")
+        ftt_tinty.sync_async(lambda _r: GLib.idle_add(self._setup_finished))
+        return False
 
-        action(on_done)
+    def _sync_palettes(self):
+        if self._busy:
+            return
+        self._busy = True
+        self._set_status("Downloading palettes…")
+        ftt_tinty.sync_async(lambda _r: GLib.idle_add(self._setup_finished))
 
-    def _package_action_finished(self):
+    def _remove_tinty(self):
+        if self._busy:
+            return
+        self._busy = True
+        self._set_status("Removing tinty…")
+        ftt_tinty.remove_package_async(lambda _r: GLib.idle_add(self._setup_finished))
+
+    def _setup_finished(self):
         self._busy = False
-        self._render()  # availability changed — rebuild install button ↔ gallery
+        self._render()  # availability/schemes changed — rebuild install ↔ sync ↔ gallery
         return False
 
 

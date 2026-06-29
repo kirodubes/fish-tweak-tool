@@ -14,11 +14,18 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   filters; each row shows a colour swatch strip, the scheme name, and its system·variant.
   Click a scheme to apply it. (Started as a cramped section under the Themes gallery; promoted
   to its own tab so it has room.)
-- **Install / remove tinty from the tab.** When tinty isn't installed the tab shows an
+- **Install / sync / remove tinty from the tab.** When tinty isn't installed the tab shows an
   **Install tinty** button (`sudo pacman -S --needed tinty-git` in a visible terminal); when
-  it is, a **Remove tinty** button sits in the header. Either action rebuilds the tab
-  (install-button ↔ gallery) when it finishes. Launched via sudo (so tinty reads root's empty
-  data dir → no schemes), the tab shows an explanatory "run as your normal user" note.
+  it is, a **Remove tinty** button sits in the header. Each action rebuilds the tab when it
+  finishes (install ↔ download-palettes ↔ gallery).
+- **Handle a fresh tinty (schemes not downloaded yet).** A freshly-installed tinty has no
+  schemes cloned, so `tinty list` errors with *"Schemes are missing, run install"* and the tab
+  was blank. The tab now detects this and shows a **Download palettes** button that runs
+  `tinty install` (clones tinted-shell + the schemes repo) in a visible terminal, then rebuilds
+  into the gallery. The **Install tinty** button chains straight into this download, so a fresh
+  box goes from nothing to a working gallery in one flow. (The earlier "run as normal user"
+  note was misdiagnosed — the real cause is un-synced schemes, not sudo, though sudo also lands
+  here via root's empty data dir.)
 - **tinted8 swatches fixed (were black).** tinted8 schemes have no `base00`/`base0x` keys —
   they use named keys (`red-normal`, `blue-normal`, …), so the base16 swatch logic found no
   colours. `swatch_colors` now branches: base16/base24 use `base08`–`base0E`, tinted8 uses the

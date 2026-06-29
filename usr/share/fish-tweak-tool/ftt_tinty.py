@@ -143,6 +143,15 @@ def setup_and_apply_async(scheme_id, on_done):
     ftt_fisher.run_async(f"tinty install; and tinty apply {scheme_id}", on_done, snapshot=True)
 
 
+def sync_async(on_done):
+    """Ensure config, then download tinty's schemes + templates (`tinty install`).
+
+    A fresh tinty has no schemes cloned yet, so `tinty list` errors until this runs.
+    """
+    ensure_config()
+    ftt_fisher.run_async("tinty install", on_done, snapshot=False)
+
+
 def install_package_async(on_done):
     """Install the tinty package via pacman in a visible terminal."""
     ftt_fisher.run_async(f"sudo pacman -S --needed {PACKAGE}", on_done, snapshot=False)
