@@ -22,6 +22,7 @@ def settings_from_prefs(prefs):
         "greeting": prefs.get("greeting", {}),
         "abbreviations": prefs.get("abbreviations", []),
         "starship": prefs.get("starship", False),
+        "tinty": prefs.get("tinty", False),
     }
 
 
@@ -81,6 +82,11 @@ def render_block(settings):
     if settings.get("starship"):
         # Starship isn't a fisher plugin — it's sourced here (loads last, so it wins).
         lines.append("type -q starship; and starship init fish | source")
+
+    if settings.get("tinty"):
+        # Re-apply the chosen tinty palette each shell (the terminal ANSI palette is
+        # per-session; fish_color_* universals persist on their own).
+        lines.append("type -q tinty; and tinty init")
 
     lines.append(END)
     return "\n".join(lines)

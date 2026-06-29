@@ -2,6 +2,57 @@
 
 All notable changes to Fish Tweak Tool are documented here. Newest first.
 
+## 2026.06.29
+
+### What Changed
+
+- **New "More palettes — base16 & base24 (via tinty)" section on the Themes tab.**
+  The native `fish_config theme` gallery is kept exactly as-is; below it sits a second
+  section that reaches 500+ extra palettes from [tinted-theming](https://github.com/tinted-theming/tinty)
+  — the maintained successor to the now-archived `base16-fish-shell` (archived Apr 2025).
+  It's a searchable list (`Gtk.SearchEntry`) with **system** (base16/base24/tinted8) and
+  **variant** (dark/light) dropdown filters; each row shows a colour swatch strip, the
+  scheme name, and its system·variant. Click a scheme to apply it. tinty is an optional
+  dependency — when it isn't installed the section shows a muted "install tinty" note and
+  nothing else, so the tab degrades cleanly.
+
+- **It recolours fish syntax highlighting *and* the terminal palette.** FIT writes tinty's
+  `~/.config/tinted-theming/tinty/config.toml` (preserving any existing user items) to point
+  at tinted-shell's per-scheme **`fish`** scripts with `hook = "fish %f"`. Those scripts set
+  `fish_color_*` **universals** (so the syntax colours change like the native gallery and
+  persist on their own) as well as the terminal's 16-colour ANSI palette. Apply runs
+  `tinty install` (idempotent) + `tinty apply <id>` in a **visible terminal** (no black box,
+  same path as every other mutation). The two layers share `fish_color_*`, so whichever you
+  apply last wins; the tinty section carries its own live "current" indicator from
+  `tinty current`.
+
+- **Managed-block persistence for the terminal palette.** The `fish_color_*` universals
+  persist automatically, but the terminal ANSI palette is per-session, so a `tinty` flag was
+  added to `ftt_managed.settings_from_prefs`/`render_block` (mirroring the `starship` flag):
+  applying a palette writes `type -q tinty; and tinty init` into the managed block so the
+  palette re-applies in every new shell. The apply path read-modify-writes full prefs via
+  `ftt_config.update_prefs` then rewrites the whole block (never a partial dict — that would
+  wipe greeting/abbreviations).
+
+### Technical Details
+
+- New module `ftt_tinty.py` (toolkit-free, like `ftt_theme.py`): `is_available`,
+  `list_schemes` (parses `tinty list --json` once — 520 schemes with full base00–base0F
+  palettes — and caches), `swatch_colors`, `current_scheme`, `is_configured`/`ensure_config`
+  (merge-safe TOML append), and `setup_and_apply_async` (routes through `ftt_fisher.run_async`).
+- `ThemesTab` gained the section + filtering/apply methods, reusing the existing `_rgb`
+  swatch-drawing pattern (new compact `_tinty_swatch`) and the shared status line.
+- tinty added as an optdepend on the `fish-tweak-tool` package (resolvable from
+  nemesis_repo, where `tinty-git` lives).
+
+### Files Modified
+
+- `usr/share/fish-tweak-tool/ftt_tinty.py` (new)
+- `usr/share/fish-tweak-tool/ftt_gui.py`
+- `usr/share/fish-tweak-tool/ftt_managed.py`
+- `CLAUDE.md`
+- `../KIRO-PKG-BUILD-APPS/fish-tweak-tool/PKGBUILD` (tinty optdepend)
+
 ## 2026.06.28
 
 ### What Changed

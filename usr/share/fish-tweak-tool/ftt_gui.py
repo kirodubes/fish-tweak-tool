@@ -22,6 +22,7 @@ import ftt_managed  # noqa: E402
 import ftt_presets  # noqa: E402
 import ftt_prompt  # noqa: E402
 import ftt_theme  # noqa: E402
+import ftt_tinty  # noqa: E402
 import log  # noqa: E402
 
 # Light/dark variant for colour-theme-aware themes (Themes tab).
@@ -945,6 +946,31 @@ def _swatch(background, colors, width=190, height=72):
     return area, update
 
 
+def _tinty_swatch(background, bars, width=150, height=20):
+    """Return a compact DrawingArea: a background tile with the accent colours as bars."""
+    area = Gtk.DrawingArea()
+    area.set_size_request(width, height)
+
+    def draw(_area, cr, w, h, _data=None):
+        cr.set_source_rgb(*(_rgb(background) if background else (0.12, 0.12, 0.12)))
+        cr.rectangle(0, 0, w, h)
+        cr.fill()
+        if bars:
+            bar_w = w / len(bars)
+            for i, color in enumerate(bars):
+                cr.set_source_rgb(*_rgb(color))
+                cr.rectangle(i * bar_w, h * 0.35, bar_w, h * 0.45)
+                cr.fill()
+
+    area.set_draw_func(draw)
+    return area
+
+
+# Tinty filter dropdown options (first entry = no filter).
+_TINTY_SYSTEMS = ["All systems", "base16", "base24", "tinted8"]
+_TINTY_VARIANTS = ["All", "dark", "light"]
+
+
 class ThemesTab(_StatusMixin):
     """Themes tab — gallery of fish_config colour themes with apply (M2)."""
 
@@ -957,6 +983,12 @@ class ThemesTab(_StatusMixin):
         self._card_colors = {}
         self._status = None
         self._busy = False
+        # Tinty (extra base16/base24 palettes) state.
+        self._tinty_rows = {}
+        self._tinty_current = None
+        self._tinty_search = ""
+        self._tinty_system = 0
+        self._tinty_variant = 0
         self.widget = self._build()
 
     def _build(self):
@@ -1000,6 +1032,9 @@ class ThemesTab(_StatusMixin):
         box.append(flow)
 
         box.append(self._init_status())
+
+        box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+        box.append(self._build_tinty_section())
 
         scroller = Gtk.ScrolledWindow()
         scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -1071,6 +1106,129 @@ class ThemesTab(_StatusMixin):
         else:
             detail = result.message or "see terminal for details"
             self._set_status(f"Could not apply {name}: {detail}", error=True)
+        return False
+
+    # ── Tinty section (extra base16/base24 palettes) ──────────────────────────
+    def _build_tinty_section(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        box.append(_section("More palettes — base16 & base24 (via tinty)"))
+        box.append(
+            _intro(
+                "500+ extra palettes from tinted-theming. Applying one recolours fish's "
+                "syntax highlighting (like the gallery above) and your terminal's colour "
+                "palette. Whichever you apply last wins. Open a new shell to see it."
+            )
+        )
+
+        if not ftt_tinty.is_available():
+            note = _intro("tinty is not installed — install it (sudo pacman -S tinty) to add these palettes.")
+            note.add_css_class("muted")
+            box.append(note)
+            return box
+
+        self._tinty_current = ftt_tinty.current_scheme()
+
+        filters = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        search = Gtk.SearchEntry()
+        search.set_placeholder_text("Search palettes…")
+        search.set_hexpand(True)
+        search.connect("search-changed", self._on_tinty_search)
+        filters.append(search)
+        system_dd = Gtk.DropDown.new_from_strings(_TINTY_SYSTEMS)
+        system_dd.connect("notify::selected", self._on_tinty_system)
+        filters.append(system_dd)
+        variant_dd = Gtk.DropDown.new_from_strings(_TINTY_VARIANTS)
+        variant_dd.connect("notify::selected", self._on_tinty_variant)
+        filters.append(variant_dd)
+        box.append(filters)
+
+        listbox = Gtk.ListBox()
+        listbox.set_selection_mode(Gtk.SelectionMode.NONE)
+        listbox.add_css_class("plugin-list")
+        listbox.set_filter_func(self._tinty_filter)
+        listbox.connect("row-activated", self._on_tinty_row_activated)
+        for scheme in ftt_tinty.list_schemes():
+            row = self._make_tinty_row(scheme)
+            self._tinty_rows[scheme["id"]] = row
+            listbox.append(row)
+        self._tinty_listbox = listbox
+
+        scroller = Gtk.ScrolledWindow()
+        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroller.set_min_content_height(220)
+        scroller.set_child(listbox)
+        box.append(scroller)
+        return box
+
+    def _make_tinty_row(self, scheme):
+        row = Gtk.ListBoxRow()
+        row._scheme = scheme  # noqa: SLF001 — stash for filter/apply
+        content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        for side in ("top", "bottom", "start", "end"):
+            getattr(content, f"set_margin_{side}")(6)
+        background, bars = ftt_tinty.swatch_colors(scheme["palette"])
+        content.append(_tinty_swatch(background, bars))
+        name = Gtk.Label(label=scheme["name"], xalign=0)
+        name.add_css_class("plugin-name")
+        name.set_hexpand(True)
+        content.append(name)
+        meta = Gtk.Label(label=f"{scheme['system']} · {scheme['variant']}", xalign=1)
+        meta.add_css_class("plugin-desc")
+        content.append(meta)
+        row.set_child(content)
+        if scheme["id"] == self._tinty_current:
+            row.add_css_class("theme-current")
+        return row
+
+    def _tinty_filter(self, row):
+        scheme = row._scheme  # noqa: SLF001
+        if self._tinty_search and self._tinty_search not in (scheme["name"] + scheme["id"]).lower():
+            return False
+        if self._tinty_system and scheme["system"] != _TINTY_SYSTEMS[self._tinty_system]:
+            return False
+        if self._tinty_variant and scheme["variant"] != _TINTY_VARIANTS[self._tinty_variant]:
+            return False
+        return True
+
+    def _on_tinty_search(self, entry):
+        self._tinty_search = entry.get_text().strip().lower()
+        self._tinty_listbox.invalidate_filter()
+
+    def _on_tinty_system(self, dropdown, _param):
+        self._tinty_system = dropdown.get_selected()
+        self._tinty_listbox.invalidate_filter()
+
+    def _on_tinty_variant(self, dropdown, _param):
+        self._tinty_variant = dropdown.get_selected()
+        self._tinty_listbox.invalidate_filter()
+
+    def _on_tinty_row_activated(self, _listbox, row):
+        self._apply_tinty(row._scheme)  # noqa: SLF001
+
+    def _apply_tinty(self, scheme):
+        if self._busy:
+            return
+        self._busy = True
+        self._set_status(f"Applying {scheme['name']}…")
+
+        def on_done(result):
+            GLib.idle_add(self._apply_tinty_finished, scheme, result)
+
+        ftt_tinty.setup_and_apply_async(scheme["id"], on_done)
+
+    def _apply_tinty_finished(self, scheme, result):
+        self._busy = False
+        if result.ok:
+            if self._tinty_current in self._tinty_rows:
+                self._tinty_rows[self._tinty_current].remove_css_class("theme-current")
+            self._tinty_rows[scheme["id"]].add_css_class("theme-current")
+            self._tinty_current = scheme["id"]
+            prefs = ftt_config.update_prefs({"tinty": True, "current_tinty_scheme": scheme["id"]})
+            ftt_managed.write_block(ftt_managed.settings_from_prefs(prefs))
+            self._set_status(f"Palette '{scheme['name']}' applied. Open a new shell to see it.")
+        else:
+            detail = result.message or "see terminal for details"
+            self._set_status(f"Could not apply {scheme['name']}: {detail}", error=True)
         return False
 
 

@@ -100,7 +100,16 @@ wrong silently clobbers user settings:
   gallery's `default` card is fish's plain prompt (applied via the `("default",)`
   reset). Starship deferred to presets.
 - **M2** — Theme gallery from `fish_config theme`. **Done** (card gallery,
-  swatches, apply, current indicator, reset).
+  swatches, apply, current indicator, reset). The Themes tab also has a second
+  section, **"More palettes — base16 & base24 (via tinty)"**: a searchable,
+  system/variant-filtered list of 500+ tinted-theming palettes orchestrated through
+  the `tinty` CLI (`ftt_tinty.py`). FIT writes tinty's `config.toml` pointing at the
+  tinted-shell **`fish`** themes-dir (`hook = "fish %f"`), so an applied scheme sets
+  `fish_color_*` universals (syntax highlighting, like the native gallery) *and* the
+  terminal ANSI palette. Apply runs `tinty install` + `tinty apply <id>` visibly, and
+  the managed block gains `type -q tinty; and tinty init` (re-applies the palette per
+  shell; the universals persist on their own). tinty is an optdepend — the section
+  shows a muted install note when it's absent.
 - **M3** — Greeting + backup-restore of `~/.config/fish/`. **Done**
   (managed-block greeting, backup/restore panel). Cursor shape was dropped — it's
   the terminal's job (Alacritty), and fish only honours `fish_cursor_*` in vi mode.
