@@ -68,7 +68,7 @@ class Main(Gtk.ApplicationWindow):
         super().__init__(application=app, title="Fish Tweak Tool")
         self._prefs = ftt_config.load_prefs()
         w = self._prefs.get("window_width", 900)
-        h = self._prefs.get("window_height", 580)
+        h = self._prefs.get("window_height", 720)
         self.set_default_size(w, h)
         self.connect("close-request", self._on_close)
         self._load_css()
