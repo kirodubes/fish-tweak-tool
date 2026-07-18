@@ -607,7 +607,7 @@ class PromptTab(_StatusMixin):
             page.append(self._build_tide_configure())
         elif key in _FRAMEWORK_CONTROLS:
             prefs_key, name, controls = _FRAMEWORK_CONTROLS[key]
-            page.append(self._build_param_controls(prefs_key, name, controls))
+            page.append(self._build_param_controls(key, prefs_key, name, controls))
         return page
 
     def _build_tide_configure(self):
@@ -637,12 +637,13 @@ class PromptTab(_StatusMixin):
             self._set_status("Could not run tide configure — see the terminal.", error=True)
         return False
 
-    def _build_param_controls(self, prefs_key, name, controls):
+    def _build_param_controls(self, key, prefs_key, name, controls):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         box.append(
             _intro(
-                f"Set the common {name} variables. Colours are fish colours — a name "
-                "(blue, brgreen, normal) or a hex code (5f5f00). Leave blank for the default."
+                f"Set the common {name} variables, then Apply — this makes {name} your prompt "
+                f"(installing it if needed) and writes these values. Colours are fish colours — "
+                "a name (blue, brgreen, normal) or a hex code (5f5f00); leave blank for the default."
             )
         )
         grid = Gtk.Grid()
@@ -666,7 +667,7 @@ class PromptTab(_StatusMixin):
         button = Gtk.Button(label=f"Apply {name} settings")
         button.add_css_class("suggested-action")
         button.set_halign(Gtk.Align.START)
-        button.connect("clicked", lambda _b: self._apply_framework_params(prefs_key, name))
+        button.connect("clicked", lambda _b: self._apply_framework_params(key, prefs_key, name))
         box.append(button)
         return box
 
@@ -687,7 +688,7 @@ class PromptTab(_StatusMixin):
             entry.set_text(_SYMBOL_PRESETS[index - 1])
             dropdown.set_selected(0)  # reset so it behaves like an insert menu
 
-    def _apply_framework_params(self, prefs_key, name):
+    def _apply_framework_params(self, key, prefs_key, _name):
         entries = self._param_entries.get(prefs_key, {})
         values = {}
         for suffix, (entry, is_color) in entries.items():
@@ -696,31 +697,12 @@ class PromptTab(_StatusMixin):
                 text = text[1:]  # set_color wants a bare hex code, no leading '#'
             if text:
                 values[suffix] = text
-        self._set_status(f"Applying {name} settings…")
-
-        def worker():
-            # Read-modify-write fresh prefs so we never clobber another section's keys,
-            # then rebuild the whole managed block (a partial dict would wipe it).
-            prefs = ftt_config.load_prefs()
-            prefs[prefs_key] = values
-            ftt_config.save_prefs(prefs)
-            backup = ftt_fisher.ensure_snapshot()
-            try:
-                ftt_managed.write_block(ftt_managed.settings_from_prefs(prefs))
-                result = ftt_fisher.Result(True, "", backup)
-            except OSError as exc:
-                result = ftt_fisher.Result(False, str(exc), backup)
-            GLib.idle_add(self._framework_params_applied, name, result)
-
-        threading.Thread(target=worker, daemon=True).start()
-
-    def _framework_params_applied(self, name, result):
-        if result.ok:
-            self._prefs = ftt_config.load_prefs()
-            self._set_status(f"{name} settings applied. Open a new shell to see them.")
-        else:
-            self._set_status(f"Could not write config: {result.message or 'see log'}", error=True)
-        return False
+        # Persist the framework's variables, then make it the active prompt: applying
+        # settings switches (and installs) the prompt so the values are actually used.
+        # _do_prompt_apply reloads prefs, so it writes the block with these values.
+        ftt_config.update_prefs({prefs_key: values})
+        self._radios[f"framework:{key}"].set_active(True)
+        self._do_prompt_apply(("framework", self._specs[key]), f"framework:{key}", None)
 
     def _info_page(self, markup):
         info = Gtk.Label(xalign=0, yalign=0)

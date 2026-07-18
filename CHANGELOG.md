@@ -13,10 +13,10 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   plugin's real default shown as the entry placeholder. A per-framework
   **"Apply Hydro/Pure settings"** button writes the chosen values into the
   managed block (`set -g hydro_symbol_prompt '❯'`, `set -g pure_color_primary
-  'brgreen'`, …) so they load last and win. This is a lightweight apply that
-  only rewrites the managed block — it does **not** reinstall the prompt (that's
-  still the top "Apply prompt" button). Empty fields fall back to the plugin
-  default (no line emitted).
+  'brgreen'`, …) so they load last and win, **and makes that framework your
+  active prompt** — installing it via fisher and switching to it in the same
+  action, so the values are actually used (no separate "Apply prompt" step
+  needed). Empty fields fall back to the plugin default (no line emitted).
 - **Prompt-symbol quick-pick.** The symbol row on both frameworks pairs its
   free-text entry with a small **"Pick…"** dropdown of common glyphs
   (`❯ ❱ ➜ → » ▶ ▸ λ $ % #`) — selecting one inserts it into the entry and the
