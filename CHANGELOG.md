@@ -2,6 +2,52 @@
 
 All notable changes to Fish Tweak Tool are documented here. Newest first.
 
+## 2026.07.18
+
+### What Changed
+
+- **Hydro & Pure parameter controls in the Prompt tab.** Tide has its own
+  `tide configure` wizard, but Hydro and Pure are tuned purely through fish
+  variables — so their Stack pages now surface the most-used ones as inline
+  controls (prompt symbol + the common `*_color_*` colours), each with the
+  plugin's real default shown as the entry placeholder. A per-framework
+  **"Apply Hydro/Pure settings"** button writes the chosen values into the
+  managed block (`set -g hydro_symbol_prompt '❯'`, `set -g pure_color_primary
+  'brgreen'`, …) so they load last and win. This is a lightweight apply that
+  only rewrites the managed block — it does **not** reinstall the prompt (that's
+  still the top "Apply prompt" button). Empty fields fall back to the plugin
+  default (no line emitted).
+- **"Run tide configure" button on the Tide page.** Since Tide configures via an
+  interactive wizard rather than variables, its page gets a button that launches
+  `tide configure` in a visible terminal, guarded on Tide actually being
+  installed (`type -q tide; and tide configure; or echo 'Install Tide first…'`).
+
+### Technical Details
+
+- Variable names, defaults, and read-time semantics were confirmed against the
+  upstream sources, not memory: Hydro recomputes each colour through an
+  `--on-variable` handler (so a late `set -g` in the managed block re-triggers
+  it); Pure reads its vars at prompt-render via `_pure_set_color`, and its
+  defaults are `set --universal`, which a `set -g` in `config.fish` shadows
+  in-session — the same load-order mechanism the greeting rule already relies on.
+  This means the managed-block approach (which loads after `conf.d`) correctly
+  overrides both.
+- `ftt_managed.settings_from_prefs`/`render_block` gained `hydro` and `pure`
+  dicts; the block emits `set -g <prefix>_<key> '<value>'` for each non-empty
+  value, unconditionally (harmless when that framework isn't the active prompt,
+  and values survive prompt switches).
+- Colours are plain text entries (accept a fish colour name *or* a hex code — a
+  GTK colour picker would force hex and lose `normal`/`brblue`); a leading `#` is
+  stripped since `set_color` wants a bare hex code.
+- Apply reads prefs fresh from disk, updates only its own section, and rewrites
+  the **complete** managed block via `settings_from_prefs` — never a partial dict
+  (which would wipe greeting/abbreviations).
+
+### Files Modified
+
+- `usr/share/fish-tweak-tool/ftt_gui.py`
+- `usr/share/fish-tweak-tool/ftt_managed.py`
+
 ## 2026.06.29
 
 ### Added to the new "Kiro Apps" menu

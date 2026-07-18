@@ -57,20 +57,48 @@ _FRAMEWORK_INFO = {
     "jorgebucaran/hydro": (
         "<b>Hydro</b> — an ultra-minimal async prompt; the fastest of the bunch. "
         "Shows the directory, git branch/status and command duration.\n\n"
-        "<b>First steps:</b> zero config needed. Tweak it by setting variables in "
-        "your config, e.g. <tt>set hydro_symbol_prompt ❯</tt> or the "
-        "<tt>hydro_color_*</tt> colours."
+        "<b>First steps:</b> zero config needed. Tune the common colours and prompt "
+        "symbol below, or set any <tt>hydro_*</tt> variable yourself."
     ),
     "pure-fish/pure": (
         "<b>Pure</b> — a clean, minimal prompt ported from zsh Pure. Shows the "
         "directory and git branch; the <tt>❯</tt> symbol turns red when the last "
         "command failed.\n\n"
-        "<b>First steps:</b> works out of the box. Customise via <tt>pure_*</tt> "
-        "variables, e.g. <tt>set pure_symbol_prompt ❯</tt>."
+        "<b>First steps:</b> works out of the box. Tune the common colours and prompt "
+        "symbol below, or set any <tt>pure_*</tt> variable yourself."
     ),
 }
 
 _FRAMEWORK_INFO_DEFAULT = "Select a prompt framework above to see details and first steps."
+
+# Common tunables surfaced per framework in the Prompt tab. Hydro and Pure have no
+# configure wizard (unlike Tide), so we expose their most-used variables directly.
+# Each entry is (variable suffix, label, placeholder-default, is_colour): colour
+# values are fed to fish's set_color, symbols are literal. The written variable is
+# "<framework>_<suffix>", set in the managed block. Placeholders are the plugins'
+# real defaults (from their sources).
+_HYDRO_CONTROLS = [
+    ("symbol_prompt", "Prompt symbol", "❱", False),
+    ("color_pwd", "Directory colour", "blue", True),
+    ("color_git", "Git colour", "brblack", True),
+    ("color_duration", "Duration colour", "yellow", True),
+    ("color_error", "Error colour", "red", True),
+    ("color_prompt", "Prompt-symbol colour", "magenta", True),
+]
+_PURE_CONTROLS = [
+    ("symbol_prompt", "Prompt symbol", "❯", False),
+    ("color_primary", "Primary colour", "blue", True),
+    ("color_info", "Info colour", "cyan", True),
+    ("color_success", "Success colour", "magenta", True),
+    ("color_danger", "Error colour", "red", True),
+    ("color_mute", "Muted colour (git)", "brblack", True),
+    ("color_warning", "Duration colour", "yellow", True),
+]
+# framework key → (prefs key / variable prefix, display name, control spec)
+_FRAMEWORK_CONTROLS = {
+    "jorgebucaran/hydro": ("hydro", "Hydro", _HYDRO_CONTROLS),
+    "pure-fish/pure": ("pure", "Pure", _PURE_CONTROLS),
+}
 
 # Starship is a standalone pacman binary (not a fisher plugin), enabled via
 # `starship init fish`. Info panel shown when the Starship radio is selected.
@@ -458,6 +486,7 @@ class PromptTab(_StatusMixin):
         self._sample_labels = {}
         self._selected_builtin = None
         self._stack = None
+        self._param_entries = {}
         self._apply_btn = None
         self._starship_cards = {}
         self._starship_preview_labels = {}
@@ -560,9 +589,114 @@ class PromptTab(_StatusMixin):
             # The framework key is its GitHub owner/repo, so link to it like Starship.
             info = _FRAMEWORK_INFO.get(key, _FRAMEWORK_INFO_DEFAULT)
             info += f"\n\n<b>More:</b> <a href='https://github.com/{key}'>github.com/{key}</a>"
-            self._stack.add_named(self._info_page(info), f"framework:{key}")
+            self._stack.add_named(self._build_framework_page(key, info), f"framework:{key}")
         self._stack.add_named(self._build_starship_page(), "starship")
         return self._stack
+
+    def _build_framework_page(self, key, info_markup):
+        # Info panel plus, where the framework has no wizard, its parameter controls;
+        # Tide instead gets a button that launches its own `tide configure` wizard.
+        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        page.append(self._info_page(info_markup))
+        if key == "IlanCosman/tide":
+            page.append(self._build_tide_configure())
+        elif key in _FRAMEWORK_CONTROLS:
+            prefs_key, name, controls = _FRAMEWORK_CONTROLS[key]
+            page.append(self._build_param_controls(prefs_key, name, controls))
+        return page
+
+    def _build_tide_configure(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box.append(
+            _intro(
+                "Tide configures itself through an interactive wizard, not variables. "
+                "Install it with Apply prompt above, then launch the wizard here."
+            )
+        )
+        button = Gtk.Button(label="Run tide configure")
+        button.set_halign(Gtk.Align.START)
+        button.connect("clicked", self._run_tide_configure)
+        box.append(button)
+        return box
+
+    def _run_tide_configure(self, _btn):
+        self._set_status("Launching tide configure…")
+        # Interactive wizard in a visible terminal; guard on Tide actually being installed.
+        command = "type -q tide; and tide configure; or echo 'Install Tide first: use Apply prompt above.'"
+        ftt_fisher.run_async(command, lambda result: GLib.idle_add(self._tide_configure_done, result), snapshot=False)
+
+    def _tide_configure_done(self, result):
+        if result.ok:
+            self._set_status("tide configure finished. Open a new shell to see changes.")
+        else:
+            self._set_status("Could not run tide configure — see the terminal.", error=True)
+        return False
+
+    def _build_param_controls(self, prefs_key, name, controls):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        box.append(
+            _intro(
+                f"Set the common {name} variables. Colours are fish colours — a name "
+                "(blue, brgreen, normal) or a hex code (5f5f00). Leave blank for the default."
+            )
+        )
+        grid = Gtk.Grid()
+        grid.set_row_spacing(6)
+        grid.set_column_spacing(10)
+        saved = self._prefs.get(prefs_key, {})
+        entries = {}
+        for row, (suffix, label, placeholder, is_color) in enumerate(controls):
+            caption = Gtk.Label(label=label, xalign=0)
+            entry = Gtk.Entry()
+            entry.set_placeholder_text(placeholder)
+            entry.set_hexpand(True)
+            entry.set_text(saved.get(suffix, ""))
+            grid.attach(caption, 0, row, 1, 1)
+            grid.attach(entry, 1, row, 1, 1)
+            entries[suffix] = (entry, is_color)
+        self._param_entries[prefs_key] = entries
+        box.append(grid)
+        button = Gtk.Button(label=f"Apply {name} settings")
+        button.add_css_class("suggested-action")
+        button.set_halign(Gtk.Align.START)
+        button.connect("clicked", lambda _b: self._apply_framework_params(prefs_key, name))
+        box.append(button)
+        return box
+
+    def _apply_framework_params(self, prefs_key, name):
+        entries = self._param_entries.get(prefs_key, {})
+        values = {}
+        for suffix, (entry, is_color) in entries.items():
+            text = entry.get_text().strip()
+            if is_color and text.startswith("#"):
+                text = text[1:]  # set_color wants a bare hex code, no leading '#'
+            if text:
+                values[suffix] = text
+        self._set_status(f"Applying {name} settings…")
+
+        def worker():
+            # Read-modify-write fresh prefs so we never clobber another section's keys,
+            # then rebuild the whole managed block (a partial dict would wipe it).
+            prefs = ftt_config.load_prefs()
+            prefs[prefs_key] = values
+            ftt_config.save_prefs(prefs)
+            backup = ftt_fisher.ensure_snapshot()
+            try:
+                ftt_managed.write_block(ftt_managed.settings_from_prefs(prefs))
+                result = ftt_fisher.Result(True, "", backup)
+            except OSError as exc:
+                result = ftt_fisher.Result(False, str(exc), backup)
+            GLib.idle_add(self._framework_params_applied, name, result)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _framework_params_applied(self, name, result):
+        if result.ok:
+            self._prefs = ftt_config.load_prefs()
+            self._set_status(f"{name} settings applied. Open a new shell to see them.")
+        else:
+            self._set_status(f"Could not write config: {result.message or 'see log'}", error=True)
+        return False
 
     def _info_page(self, markup):
         info = Gtk.Label(xalign=0, yalign=0)

@@ -21,6 +21,8 @@ def settings_from_prefs(prefs):
     return {
         "greeting": prefs.get("greeting", {}),
         "abbreviations": prefs.get("abbreviations", []),
+        "hydro": prefs.get("hydro", {}),
+        "pure": prefs.get("pure", {}),
         "starship": prefs.get("starship", False),
         "tinty": prefs.get("tinty", False),
     }
@@ -78,6 +80,15 @@ def render_block(settings):
         expansion = abbr.get("expansion", "").strip()
         if name and expansion:
             lines.append(f"abbr -a -- {name} '{_quote(expansion)}'")
+
+    # Hydro/Pure have no configure wizard, so FTT tunes them by setting their fish
+    # variables here. This loads after conf.d, so it overrides the plugins' defaults:
+    # Hydro's --on-variable handlers recompute on the set, Pure reads them at render.
+    for framework in ("hydro", "pure"):
+        for key, value in settings.get(framework, {}).items():
+            value = value.strip() if isinstance(value, str) else ""
+            if value:
+                lines.append(f"set -g {framework}_{key} '{_quote(value)}'")
 
     if settings.get("starship"):
         # Starship isn't a fisher plugin — it's sourced here (loads last, so it wins).
