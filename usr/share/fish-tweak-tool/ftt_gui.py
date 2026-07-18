@@ -100,6 +100,11 @@ _FRAMEWORK_CONTROLS = {
     "pure-fish/pure": ("pure", "Pure", _PURE_CONTROLS),
 }
 
+# Quick-pick glyphs for the prompt-symbol field. All standard Unicode (no Private-Use
+# Area), so they render in any font and survive being written to source. The field
+# stays a free-text entry — the picker just inserts one, it doesn't restrict input.
+_SYMBOL_PRESETS = ["❯", "❱", "➜", "→", "»", "▶", "▸", "λ", "$", "%", "#"]
+
 # Starship is a standalone pacman binary (not a fisher plugin), enabled via
 # `starship init fish`. Info panel shown when the Starship radio is selected.
 _STARSHIP_INFO = (
@@ -651,8 +656,10 @@ class PromptTab(_StatusMixin):
             entry.set_placeholder_text(placeholder)
             entry.set_hexpand(True)
             entry.set_text(saved.get(suffix, ""))
+            # The symbol field pairs the entry with a glyph quick-pick; colours are plain.
+            field = self._symbol_field(entry) if suffix == "symbol_prompt" else entry
             grid.attach(caption, 0, row, 1, 1)
-            grid.attach(entry, 1, row, 1, 1)
+            grid.attach(field, 1, row, 1, 1)
             entries[suffix] = (entry, is_color)
         self._param_entries[prefs_key] = entries
         box.append(grid)
@@ -662,6 +669,23 @@ class PromptTab(_StatusMixin):
         button.connect("clicked", lambda _b: self._apply_framework_params(prefs_key, name))
         box.append(button)
         return box
+
+    def _symbol_field(self, entry):
+        # Free-text entry plus a dropdown that inserts a common glyph (pick-or-type).
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        picker = Gtk.DropDown.new_from_strings(["Pick…", *_SYMBOL_PRESETS])
+        picker.set_valign(Gtk.Align.CENTER)
+        picker.set_tooltip_text("Insert a common prompt symbol")
+        picker.connect("notify::selected", self._on_symbol_picked, entry)
+        box.append(entry)
+        box.append(picker)
+        return box
+
+    def _on_symbol_picked(self, dropdown, _param, entry):
+        index = dropdown.get_selected()
+        if index > 0:
+            entry.set_text(_SYMBOL_PRESETS[index - 1])
+            dropdown.set_selected(0)  # reset so it behaves like an insert menu
 
     def _apply_framework_params(self, prefs_key, name):
         entries = self._param_entries.get(prefs_key, {})

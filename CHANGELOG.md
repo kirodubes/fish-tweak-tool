@@ -17,6 +17,13 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   only rewrites the managed block — it does **not** reinstall the prompt (that's
   still the top "Apply prompt" button). Empty fields fall back to the plugin
   default (no line emitted).
+- **Prompt-symbol quick-pick.** The symbol row on both frameworks pairs its
+  free-text entry with a small **"Pick…"** dropdown of common glyphs
+  (`❯ ❱ ➜ → » ▶ ▸ λ $ % #`) — selecting one inserts it into the entry and the
+  dropdown resets, so it acts like an insert menu without restricting input (you
+  can still type any custom symbol). All presets are standard Unicode (no
+  Private-Use-Area glyphs), so they render in any font. Powerline/Nerd-Font
+  glyphs were intentionally left out of the list for now.
 - **"Run tide configure" button on the Tide page.** Since Tide configures via an
   interactive wizard rather than variables, its page gets a button that launches
   `tide configure` in a visible terminal, guarded on Tide actually being
