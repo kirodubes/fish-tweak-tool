@@ -138,7 +138,10 @@ def _starship_preview(name):
         cmd = f"env STARSHIP_CONFIG='{_KIRO_STARSHIP_TOML}' starship prompt"
     else:
         tmp = f"/tmp/ftt-starship-{name}.toml"
-        cmd = f"starship preset {name} -o '{tmp}'; and env STARSHIP_CONFIG='{tmp}' starship prompt"
+        # --force: starship preset refuses to overwrite an existing file, and this
+        # fixed path persists across launches — without it every run after the
+        # first fails and the preview goes blank.
+        cmd = f"starship preset {name} -o '{tmp}' --force; and env STARSHIP_CONFIG='{tmp}' starship prompt"
     rc, out, _ = ftt_fisher.run_fish(cmd)
     return out if rc == 0 else ""
 
@@ -780,7 +783,7 @@ class PromptTab(_StatusMixin):
         if name == _KIRO_PRESET:
             apply_cmd = f"cp -f '{_KIRO_STARSHIP_TOML}' '{_STARSHIP_CONFIG}'"
         else:
-            apply_cmd = f"starship preset {name} -o '{_STARSHIP_CONFIG}'"
+            apply_cmd = f"starship preset {name} -o '{_STARSHIP_CONFIG}' --force"
         # Back up an existing toml first, then write the chosen preset.
         backup = f"test -f '{_STARSHIP_CONFIG}'; and cp -f '{_STARSHIP_CONFIG}' '{_STARSHIP_CONFIG}.ftt-bak'"
         self._set_status(f"Applying starship preset '{name}'…")
@@ -1123,6 +1126,7 @@ class ThemesTab(_StatusMixin):
         self._cards = {}
         self._swatch_updaters = {}
         self._card_colors = {}
+        self._all_colors = {}
         self._status = None
         self._busy = False
         self.widget = self._build()
@@ -1131,6 +1135,7 @@ class ThemesTab(_StatusMixin):
         themes = ftt_theme.list_themes()
         if not themes:
             return _notice("No themes found", "fish_config theme list returned nothing.")
+        self._all_colors = ftt_theme.parse_all_themes(themes, self._variant)
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         for side in ("top", "bottom", "start", "end"):
@@ -1176,7 +1181,8 @@ class ThemesTab(_StatusMixin):
         return scroller
 
     def _make_card(self, name):
-        background, colors = ftt_theme.parse_theme(name, self._variant)
+        _, colors = self._all_colors.get(name, (None, {}))
+        background = self._fallback_bg()
         self._card_colors[name] = (background, colors)
         button = Gtk.Button()
         button.add_css_class("theme-card")
@@ -1210,10 +1216,16 @@ class ThemesTab(_StatusMixin):
     def _on_variant_changed(self, dropdown, _param):
         self._variant = _VARIANTS[dropdown.get_selected()]
         self._prefs = ftt_config.update_prefs({"theme_variant": self._variant})
+        self._all_colors = ftt_theme.parse_all_themes(list(self._swatch_updaters), self._variant)
+        background = self._fallback_bg()
         for name, update in self._swatch_updaters.items():
-            background, colors = ftt_theme.parse_theme(name, self._variant)
+            _, colors = self._all_colors.get(name, (None, {}))
             self._card_colors[name] = (background, colors)
             update(background, colors)
+
+    def _fallback_bg(self):
+        """Swatch background, variant-appropriate — dump gives no per-theme background."""
+        return "#e8e8e8" if self._variant == "light" else "#2b2b2b"
 
     def _apply(self, name):
         if self._busy:

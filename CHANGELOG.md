@@ -29,8 +29,38 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   `tide configure` in a visible terminal, guarded on Tide actually being
   installed (`type -q tide; and tide configure; or echo 'Install Tide first…'`).
 
+- **Themes tab no longer renders every swatch black (fish 4.x fix).** fish 4.x
+  stopped shipping its built-in themes as `.theme` files on disk (`/usr/share/fish/themes`
+  is now empty — the themes are embedded in the binary), so the old file-parsing
+  path in `ftt_theme.py` found nothing and every swatch fell back to the blank
+  dark tile. Colours are now read via the CLI — loading each theme into a
+  throwaway `fish -c` session with `fish_config theme choose` and reading it back
+  with `fish_config theme dump`. Same root cause silently broke variant-aware
+  apply (`is_color_theme_aware` was file-based too, so catppuccin/ayu applied
+  without their light/dark flag); that is fixed by detecting awareness from
+  `fish_config theme show`'s header.
+- **Starship preset previews no longer go blank after the first launch.**
+  `starship preset <name> -o <file>` refuses to overwrite an existing file, and
+  the preview wrote to a fixed `/tmp/ftt-starship-<name>.toml`; every run after
+  the first hit the stale file, failed, and rendered an empty card. Added
+  `--force` to both the preview and the apply command (the apply target,
+  `~/.config/starship.toml`, hit the same wall once it existed).
+
 ### Technical Details
 
+- `ftt_theme.parse_all_themes(names, variant)` does one batched `fish -c` run:
+  it loops the themes, `choose`s each, and `dump`s it, marking blocks with a
+  sentinel. Aware themes leave `fish_color_command` without a hex until a variant
+  is picked, so those get a second `choose --color-theme=<variant>` pass. Every
+  dump line is tagged `--theme=<name>`; that tag is the provenance guard — a line
+  whose tag doesn't match the current block is stale (a failed choose) and is
+  dropped, so one theme's colours can never bleed into another. The per-line
+  parse reuses the existing `_resolve_color` (dump lines share the `.theme` body
+  format). The Themes tab calls it once on build and once per variant change,
+  instead of one `fish -c` per card.
+- `dump` output carries no `# preferred_background:`, so the swatch background is
+  a variant-appropriate grey fallback (`#2b2b2b` dark / `#e8e8e8` light); the
+  coloured bars carry the theme identity.
 - Variable names, defaults, and read-time semantics were confirmed against the
   upstream sources, not memory: Hydro recomputes each colour through an
   `--on-variable` handler (so a late `set -g` in the managed block re-triggers
@@ -54,6 +84,7 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
 
 - `usr/share/fish-tweak-tool/ftt_gui.py`
 - `usr/share/fish-tweak-tool/ftt_managed.py`
+- `usr/share/fish-tweak-tool/ftt_theme.py`
 
 ## 2026.06.29
 

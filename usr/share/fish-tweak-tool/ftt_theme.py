@@ -1,20 +1,18 @@
 """Colour theme gallery for fish-tweak-tool (fish_config theme).
 
-Lists fish's bundled `.theme` files, parses a few colours from each for a swatch
-preview, and applies one with ``fish_config theme save`` (which, like prompt
-save, gates on an interactive read — so the apply pipes `y`).
+fish 4.x no longer ships its built-in themes as `.theme` files on disk — they
+are embedded in the binary, reachable only through the CLI. So swatch colours
+are read by loading a theme into a throwaway `fish -c` session
+(``fish_config theme choose``) and printing it back with ``fish_config theme
+dump`` — never by parsing files. Applying uses ``fish_config theme save`` (which,
+like prompt save, gates on an interactive read — so the apply pipes `y`).
 """
 
-import os
 import re
 
 import ftt_fisher
 
-SYSTEM_THEME_DIR = "/usr/share/fish/themes"
-USER_THEME_DIR = os.path.expanduser("~/.config/fish/themes")
-
 _HEX_RE = re.compile(r"^[0-9a-fA-F]{6}$|^[0-9a-fA-F]{3}$")
-_AWARE_RE = re.compile(r"^\[(dark|light|unknown)\]")
 
 # Themes may name colours instead of giving hex (e.g. `fish_color_comment red`).
 # Map the 16 fish/ANSI names to representative hex so swatches/previews render.
@@ -26,6 +24,8 @@ _ANSI_HEX = {
     "brcyan": "#34e2e2", "brwhite": "#eeeeec",
 }
 
+_MARKER = "@@FTT@@"
+
 
 def list_themes():
     """Return the list of theme names from fish_config theme list."""
@@ -35,63 +35,64 @@ def list_themes():
     return [line.strip() for line in out.splitlines() if line.strip()]
 
 
-def theme_file(name):
-    """Return the .theme file path for a theme name (user dir wins), or None."""
-    for directory in (USER_THEME_DIR, SYSTEM_THEME_DIR):
-        path = os.path.join(directory, f"{name}.theme")
-        if os.path.isfile(path):
-            return path
-    return None
+def parse_all_themes(names, variant="dark"):
+    """Return {name: (None, {fish_color_key: hex})} for every theme, in one fish run.
+
+    Each theme is loaded with ``fish_config theme choose`` and read back with
+    ``dump``. Colour-theme-aware themes (catppuccin, ayu, …) leave
+    ``fish_color_command`` without a hex until a variant is chosen, so those get
+    a second ``choose --color-theme=<variant>`` pass. ``dump`` tags every line
+    with ``--theme=<name>``; that tag is the provenance guard — a line missing
+    the current theme's tag is stale (a failed choose) and is dropped, so one
+    theme's colours can never be attributed to another. Background is not in
+    ``dump`` output, so the bg is always None (the caller supplies a fallback).
+    """
+    if not names:
+        return {}
+
+    quoted = " ".join(_fish_quote(name) for name in names)
+    script = (
+        f"set -l variant {variant}\n"
+        f"for t in {quoted}\n"
+        f"    printf '{_MARKER}%s\\n' $t\n"
+        "    fish_config theme choose $t 2>/dev/null\n"
+        "    set -l d (fish_config theme dump 2>/dev/null)\n"
+        "    if not string match -qr '^fish_color_command +[0-9a-fA-F]' -- $d\n"
+        "        fish_config theme choose $t --color-theme=$variant 2>/dev/null\n"
+        "        set d (fish_config theme dump 2>/dev/null)\n"
+        "    end\n"
+        "    printf '%s\\n' $d\n"
+        "end\n"
+    )
+    _, out, _ = ftt_fisher.run_fish(script)
+
+    result = {name: {} for name in names}
+    current = None
+    for line in out.splitlines():
+        if line.startswith(_MARKER):
+            current = line[len(_MARKER):]
+            continue
+        if current is None or f"--theme={current}" not in line:
+            continue
+        parts = line.split()
+        value = _resolve_color(parts[1:])
+        if value:
+            result[current][parts[0]] = value
+
+    return {name: (None, colors) for name, colors in result.items()}
 
 
 def parse_theme(name, variant="dark"):
-    """Return (background_hex, {fish_color_key: hex}) for the chosen variant.
-
-    Colour-theme-aware files split colours into [light]/[dark] sections; the
-    requested variant is used, falling back to dark/light/unknown, then to the
-    file's top-level colours for non-aware themes. Named ANSI colours are mapped
-    to hex; flag-only values (`--reset`, `--reverse`) are dropped.
-    """
-    path = theme_file(name)
-    if not path:
-        return None, {}
-
-    sections = {None: {"bg": None, "colors": {}}}
-    current = None
-    with open(path, encoding="utf-8") as f:
-        for raw in f:
-            line = raw.strip()
-            match = _AWARE_RE.match(line)
-            if match:
-                current = match.group(1)
-                sections.setdefault(current, {"bg": None, "colors": {}})
-                continue
-            section = sections[current]
-            if line.startswith("# preferred_background:"):
-                section["bg"] = _to_hex(line.split(":", 1)[1].strip())
-            elif line and not line.startswith("#"):
-                parts = line.split()
-                value = _resolve_color(parts[1:])
-                if value:
-                    section["colors"][parts[0]] = value
-
-    chosen = sections[None]
-    for key in (variant, "dark", "light", "unknown", None):
-        candidate = sections.get(key)
-        if candidate and (candidate["colors"] or candidate["bg"]):
-            chosen = candidate
-            break
-
-    return chosen["bg"], chosen["colors"]
+    """Return (None, {fish_color_key: hex}) for one theme (thin wrapper on parse_all_themes)."""
+    return parse_all_themes([name], variant).get(name, (None, {}))
 
 
 def is_color_theme_aware(name):
-    """Return True if the theme has light/dark variant sections (needs --color-theme)."""
-    path = theme_file(name)
-    if not path:
+    """Return True if the theme has light/dark variants (needs --color-theme)."""
+    rc, out, _ = ftt_fisher.run_fish(f"fish_config theme show {_fish_quote(name)}")
+    if rc != 0:
         return False
-    with open(path, encoding="utf-8") as f:
-        return any(_AWARE_RE.match(line) for line in f)
+    return "(light color theme)" in out or "(dark color theme)" in out
 
 
 def apply_async(name, on_done, snapshot=False, color_theme="dark"):
@@ -107,11 +108,16 @@ def apply_async(name, on_done, snapshot=False, color_theme="dark"):
     ftt_fisher.run_async(f"echo y | fish_config theme save {flag}{name}", on_done, snapshot)
 
 
+def _fish_quote(value):
+    """Single-quote a value for safe interpolation into a fish script."""
+    return "'" + value.replace("\\", "\\\\").replace("'", "\\'") + "'"
+
+
 def _resolve_color(tokens):
     """First usable colour token → '#hex' (hex or named), ignoring flags; None if none."""
     for raw in tokens:
         token = raw.strip("\"'")  # some themes quote their values, e.g. '888'
-        if not token or token.startswith("-"):  # --reset, --reverse, --bold, --background=…
+        if not token or token.startswith("-"):  # --reset, --reverse, --bold, --theme=…
             continue
         if _HEX_RE.match(token):
             return "#" + token
@@ -119,8 +125,3 @@ def _resolve_color(tokens):
         if mapped:
             return mapped
     return None
-
-
-def _to_hex(token):
-    token = token.strip("\"'")
-    return "#" + token if _HEX_RE.match(token) else None
