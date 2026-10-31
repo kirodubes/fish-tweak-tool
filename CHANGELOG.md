@@ -2,6 +2,32 @@
 
 All notable changes to Fish Tweak Tool are documented here. Newest first.
 
+## 2026.10.31
+
+### What Changed
+- **Fish Tweak Tool speaks 13 languages**: Dutch, German, Spanish, French, Portuguese (Brazil), Russian, Hungarian,
+  Italian, Turkish, Polish, Japanese, Chinese (simplified) and Romanian, besides English. It follows the system
+  language (Portugal reads Brazilian Portuguese, Taiwan/Hong Kong simplified Chinese).
+- **Language section with a dropdown** and **Restart now** to pick another language. The menu entry is translated too.
+
+### Technical Details
+- New `ftt_i18n.py`, the shared Kiro i18n module (domain `fish-tweak-tool`, catalogs in `usr/share/locale`, choice in
+  the app's prefs via `ftt_config`, `FTT_LANGUAGE` test pin, sibling fallback pt→pt_BR, zh→zh_CN).
+- 209 strings in `_()`; preset names and summaries are `N_()` lookup keys translated where shown; counts use `ngettext`.
+  fish commands, config keys, theme and plugin names stay as they are.
+- `po/`: template, 13 `.po` files, `make-mo.sh` (also writes the menu entry from `po/fish-tweak-tool.desktop.in`),
+  `.codespellrc`.
+- Code and drafts by GitHub Copilot (GPT-6 Luna) from the Kiro-HQ brief; review by a second AI (Luna; GPT-6.1 Terra
+  for Russian, Hungarian, Turkish, Polish, Japanese, Chinese and Romanian): 332 findings, 324 taken through guarded
+  automatic fixes. German and Russian windows checked off-screen.
+
+### Files Modified
+- `usr/share/fish-tweak-tool/ftt_i18n.py` (new), `ftt_gui.py` (language section), `ftt_presets.py`, `ftt_fisher.py`,
+  `fish-tweak-tool.py`
+- `po/` (new), `usr/share/locale/*/LC_MESSAGES/fish-tweak-tool.mo` (new),
+  `usr/share/applications/fish-tweak-tool.desktop` (now generated), `.codespellrc` (new)
+- `README.md`, `CLAUDE.md`, `CHANGELOG.md`
+
 ## 2026.10.25
 
 ### What Changed

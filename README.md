@@ -51,6 +51,12 @@ shipped defaults without the two layers ever fighting.
 | **M5**    | Package for nemesis_repo; ATT Shells → Fish deep-links here. *(done)* |
 | **M6**    | Abbreviations — git-abbr plugin toggle + custom editor. *(done)* |
 
+## Languages
+
+Fish Tweak Tool follows your system language: English, Dutch, German, Spanish, French, Portuguese (Brazil),
+Russian, Hungarian, Italian, Turkish, Polish, Japanese, Chinese (simplified) and Romanian. Pick another one in the
+**Language** section and press **Restart now**.
+
 ## Installation
 
 Add the nemesis_repo to `/etc/pacman.conf`:

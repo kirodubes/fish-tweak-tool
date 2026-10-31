@@ -18,6 +18,7 @@ import tempfile
 import threading
 
 import log
+from ftt_i18n import _  # noqa: E402
 
 FISH_CONFIG_DIR = os.path.expanduser("~/.config/fish")
 BACKUP_DIR = os.path.expanduser("~/.config/fish-tweak-tool/backups")
@@ -51,9 +52,9 @@ def run_fish(command, timeout=180):
         )
         return proc.returncode, proc.stdout, proc.stderr
     except subprocess.TimeoutExpired:
-        return 124, "", "operation timed out"
+        return 124, "", _("operation timed out")
     except FileNotFoundError:
-        return 127, "", "fish not found"
+        return 127, "", _("fish not found")
 
 
 def ensure_snapshot():
@@ -125,9 +126,12 @@ def _find_terminal():
 def _terminal_script(command, status_path):
     """Build the fish script the terminal runs: echo the command, run it, save status."""
     display = command.replace("\\", "\\\\").replace("'", "\\'")
+    heading = _fish_quote(_("This app is running the following command on your system:"))
+    done = _fish_quote(_("Done (success). Press enter to close."))
+    failed = _fish_quote(_("Failed (exit {status}). Press enter to close."))
     return (
         "set_color cyan\n"
-        'echo "Fish Tweak Tool is running this command on your system:"\n'
+        f"echo {heading}\n"
         "set_color normal\n"
         "echo\n"
         f"echo '    {display}'\n"
@@ -138,14 +142,19 @@ def _terminal_script(command, status_path):
         "echo\n"
         "if test $_ftt_status -eq 0\n"
         "    set_color green\n"
-        '    echo "Done (success). Press enter to close."\n'
+        f"    echo {done}\n"
         "else\n"
         "    set_color red\n"
-        '    echo "Failed (exit $_ftt_status). Press enter to close."\n'
+        f"    set -l _ftt_message {failed}\n"
+        "    echo (string replace -- '{status}' $_ftt_status $_ftt_message)\n"
         "end\n"
         "set_color normal\n"
         "read\n"
     )
+
+
+def _fish_quote(value):
+    return "'" + value.replace("\\", "\\\\").replace("'", "\\'") + "'"
 
 
 def run_visibly(command):

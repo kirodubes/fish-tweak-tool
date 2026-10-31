@@ -37,6 +37,7 @@ sys.path.insert(0, BASE_DIR)
 import ftt_config  # noqa: E402
 import ftt_gui as gui_module  # noqa: E402
 import log  # noqa: E402
+from ftt_i18n import _  # noqa: E402
 
 
 def _fish_version():
@@ -46,7 +47,7 @@ def _fish_version():
         # output is e.g. "fish, version 4.7.1"
         return out.stdout.strip().split()[-1]
     except Exception:
-        return "unknown"
+        return _("unknown")
 
 
 class FishTweakApp(Gtk.Application):

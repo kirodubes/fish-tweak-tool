@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import threading
 
 import gi
@@ -18,58 +19,60 @@ from gi.repository import GLib, Gtk  # noqa: E402
 
 import ftt_config  # noqa: E402
 import ftt_fisher  # noqa: E402
+import ftt_i18n  # noqa: E402
 import ftt_managed  # noqa: E402
 import ftt_presets  # noqa: E402
 import ftt_prompt  # noqa: E402
 import ftt_theme  # noqa: E402
 import ftt_tinty  # noqa: E402
 import log  # noqa: E402
+from ftt_i18n import _, N_, ngettext  # noqa: E402
 
 # Light/dark variant for colour-theme-aware themes (Themes tab).
 _VARIANTS = ["dark", "light"]
 
 # The consensus must-have fisher plugins: repo → one-line description.
 _PLUGINS = [
-    ("PatrickF1/fzf.fish", "Fuzzy search over history, files, git, processes"),
-    ("jorgebucaran/autopair.fish", "Auto-closes brackets, quotes and parens"),
-    ("meaningful-ooo/sponge", "Drops failed commands from history"),
-    ("nickeb96/puffer-fish", "Expands .. and ... as you type"),
+    ("PatrickF1/fzf.fish", _("Fuzzy search over history, files, git, processes")),
+    ("jorgebucaran/autopair.fish", _("Auto-closes brackets, quotes and parentheses")),
+    ("meaningful-ooo/sponge", _("Drops failed commands from history")),
+    ("nickeb96/puffer-fish", _("Expands .. and ... as you type")),
 ]
 
 # Installable prompt frameworks: (display/match key, fisher install spec, description).
 # Tide installs from a version tag but fisher lists it as the bare repo, so the
 # install spec and the match key differ.
 _PROMPT_FRAMEWORKS = [
-    ("IlanCosman/tide", "IlanCosman/tide@v6", "Modern async prompt with a setup wizard (tide configure)"),
-    ("jorgebucaran/hydro", "jorgebucaran/hydro", "Ultra-minimal async prompt; fast git + duration"),
-    ("pure-fish/pure", "pure-fish/pure", "Minimal clean prompt; directory + git branch"),
+    ("IlanCosman/tide", "IlanCosman/tide@v6", _("Modern async prompt with a setup wizard (tide configure)")),
+    ("jorgebucaran/hydro", "jorgebucaran/hydro", _("Ultra-minimal async prompt; fast git + duration")),
+    ("pure-fish/pure", "pure-fish/pure", _("Minimal clean prompt; directory + git branch")),
 ]
 
 # Per-framework detail + first steps, shown in the info panel when a row is selected.
 _FRAMEWORK_INFO = {
     "IlanCosman/tide": (
-        "<b>Tide</b> — the most configurable modern fish prompt. Async, so it "
+        _("<b>Tide</b> — the most configurable modern fish prompt. Async, so it "
         "renders instantly and fills in git status in the background.\n\n"
         "<b>First steps:</b> after installing, run <tt>tide configure</tt> in a "
         "terminal to launch the interactive wizard (style, icons, colours). "
-        "Re-run it any time to change the look."
+        "Re-run it any time to change the look.")
     ),
     "jorgebucaran/hydro": (
-        "<b>Hydro</b> — an ultra-minimal async prompt; the fastest of the bunch. "
+        _("<b>Hydro</b> — an ultra-minimal async prompt; the fastest of the bunch. "
         "Shows the directory, git branch/status and command duration.\n\n"
         "<b>First steps:</b> zero config needed. Tune the common colours and prompt "
-        "symbol below, or set any <tt>hydro_*</tt> variable yourself."
+        "symbol below, or set any <tt>hydro_*</tt> variable yourself.")
     ),
     "pure-fish/pure": (
-        "<b>Pure</b> — a clean, minimal prompt ported from zsh Pure. Shows the "
+        _("<b>Pure</b> — a clean, minimal prompt ported from zsh Pure. Shows the "
         "directory and git branch; the <tt>❯</tt> symbol turns red when the last "
         "command failed.\n\n"
         "<b>First steps:</b> works out of the box. Tune the common colours and prompt "
-        "symbol below, or set any <tt>pure_*</tt> variable yourself."
+        "symbol below, or set any <tt>pure_*</tt> variable yourself.")
     ),
 }
 
-_FRAMEWORK_INFO_DEFAULT = "Select a prompt framework above to see details and first steps."
+_FRAMEWORK_INFO_DEFAULT = _("Select a prompt framework above to see details and first steps.")
 
 # Common tunables surfaced per framework in the Prompt tab. Hydro and Pure have no
 # configure wizard (unlike Tide), so we expose their most-used variables directly.
@@ -78,21 +81,21 @@ _FRAMEWORK_INFO_DEFAULT = "Select a prompt framework above to see details and fi
 # "<framework>_<suffix>", set in the managed block. Placeholders are the plugins'
 # real defaults (from their sources).
 _HYDRO_CONTROLS = [
-    ("symbol_prompt", "Prompt symbol", "❱", False),
-    ("color_pwd", "Directory colour", "blue", True),
-    ("color_git", "Git colour", "brblack", True),
-    ("color_duration", "Duration colour", "yellow", True),
-    ("color_error", "Error colour", "red", True),
-    ("color_prompt", "Prompt-symbol colour", "magenta", True),
+    ("symbol_prompt", _("Prompt symbol"), "❱", False),
+    ("color_pwd", _("Directory colour"), "blue", True),
+    ("color_git", _("Git colour"), "brblack", True),
+    ("color_duration", _("Duration colour"), "yellow", True),
+    ("color_error", _("Error colour"), "red", True),
+    ("color_prompt", _("Prompt-symbol colour"), "magenta", True),
 ]
 _PURE_CONTROLS = [
-    ("symbol_prompt", "Prompt symbol", "❯", False),
-    ("color_primary", "Primary colour", "blue", True),
-    ("color_info", "Info colour", "cyan", True),
-    ("color_success", "Success colour", "magenta", True),
-    ("color_danger", "Error colour", "red", True),
-    ("color_mute", "Muted colour (git)", "brblack", True),
-    ("color_warning", "Duration colour", "yellow", True),
+    ("symbol_prompt", _("Prompt symbol"), "❯", False),
+    ("color_primary", _("Primary colour"), "blue", True),
+    ("color_info", _("Info colour"), "cyan", True),
+    ("color_success", _("Success colour"), "magenta", True),
+    ("color_danger", _("Error colour"), "red", True),
+    ("color_mute", _("Muted colour (git)"), "brblack", True),
+    ("color_warning", _("Duration colour"), "yellow", True),
 ]
 # framework key → (prefs key / variable prefix, display name, control spec)
 _FRAMEWORK_CONTROLS = {
@@ -108,12 +111,12 @@ _SYMBOL_PRESETS = ["❯", "❱", "➜", "→", "»", "▶", "▸", "λ", "$", "%
 # Starship is a standalone pacman binary (not a fisher plugin), enabled via
 # `starship init fish`. Info panel shown when the Starship radio is selected.
 _STARSHIP_INFO = (
-    "<b>Starship</b> — a fast, highly-customisable cross-shell prompt (a single "
+    _("<b>Starship</b> — a fast, highly-customisable cross-shell prompt (a single "
     "Rust binary, not a fisher plugin). Applying installs the <tt>starship</tt> "
     "package if needed and enables it via <tt>starship init fish</tt>.\n\n"
     "<b>First steps:</b> configure it in <tt>~/.config/starship.toml</tt>; browse "
-    "presets and modules at <a href='https://github.com/starship/starship'>"
-    "github.com/starship/starship</a>."
+    "presets and modules:")
+    + " <a href='https://github.com/starship/starship'>github.com/starship/starship</a>."
 )
 
 # Starship config + the Kiro default shipped by the kiro-starship package (/etc/skel).
@@ -221,7 +224,7 @@ class _PluginRow:
 
         link = Gtk.Label()
         link.set_markup(f"<a href='https://github.com/{plugin}'><i>link</i></a>")
-        link.set_tooltip_text(f"Open github.com/{plugin}")
+        link.set_tooltip_text(_("Open this plugin on GitHub"))
         link.set_valign(Gtk.Align.CENTER)
         link.connect("activate-link", _open_link)
 
@@ -334,12 +337,13 @@ class _FisherTab(_StatusMixin):
         row.set_loading(False)
         if result.ok:
             row.set_installed(want_on)
-            verb = "installed" if want_on else "removed"
-            self._set_status(f"{row.plugin} {verb}.")
+            message = _("Installed {plugin}.") if want_on else _("Removed {plugin}.")
+            self._set_status(message.format(plugin=row.plugin))
         else:
             row.set_installed(not want_on)
-            detail = result.message or "see terminal for details"
-            self._set_status(f"{row.plugin} failed: {detail}", error=True)
+            detail = result.message or _("see terminal for details")
+            self._set_status(_("Could not change {plugin}: {detail}").format(plugin=row.plugin, detail=detail),
+                             error=True)
         return False
 
 
@@ -355,7 +359,7 @@ class PluginsTab(_FisherTab):
 
     def _build(self):
         if not ftt_fisher.is_fisher_available():
-            return _notice("fisher is not available", "Install it with:  sudo pacman -S fisher")
+            return _notice(_("fisher is not available"), _("Install it with:  sudo pacman -S fisher"))
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         for side in ("top", "bottom", "start", "end"):
@@ -363,8 +367,8 @@ class PluginsTab(_FisherTab):
 
         box.append(
             _intro(
-                "Toggle a plugin to install or remove it with fisher. "
-                "Your fish config is backed up before the first change."
+                _("Toggle a plugin to install or remove it with fisher. "
+                  "Your fish config is backed up before the first change.")
             )
         )
 
@@ -546,31 +550,34 @@ class PromptTab(_StatusMixin):
             getattr(box, f"set_margin_{side}")(16)
 
         self._init_status()
-        box.append(_section("Prompt"))
+        box.append(_section(_("Prompt")))
         box.append(
             _intro(
-                "Choose one prompt. fish has a single prompt slot, so applying one "
-                "removes any other framework and makes this your prompt."
+                _("Choose one prompt. fish has a single prompt slot, so applying one "
+                  "removes any other framework and makes this your prompt.")
             )
         )
 
         group = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         group.add_css_class("plugin-list")
-        self._add_radio(group, "builtin", "Built-in — fish's bundled styles", sensitive=bool(self._builtin_names))
+        self._add_radio(group, "builtin", _("Built-in — fish's bundled styles"), sensitive=bool(self._builtin_names))
         for key, _spec, desc in _PROMPT_FRAMEWORKS:
             name = key.rsplit("/", 1)[-1].capitalize()
-            self._add_radio(group, f"framework:{key}", f"{name} — {desc}", sensitive=fisher)
-        self._add_radio(group, "starship", "Starship — fast, customisable cross-shell prompt (pacman)")
+            self._add_radio(
+                group, f"framework:{key}", _("{name} — {description}").format(name=name, description=desc),
+                sensitive=fisher
+            )
+        self._add_radio(group, "starship", _("Starship — fast, customisable cross-shell prompt (pacman)"))
         box.append(group)
 
-        self._apply_btn = Gtk.Button(label="Apply prompt")
+        self._apply_btn = Gtk.Button(label=_("Apply prompt"))
         self._apply_btn.add_css_class("suggested-action")
         self._apply_btn.set_halign(Gtk.Align.START)
         self._apply_btn.connect("clicked", self._apply_prompt)
         box.append(self._apply_btn)
 
         if not fisher:
-            note = _intro("fisher is not available — install it (sudo pacman -S fisher) to use prompt frameworks.")
+            note = _intro(_("fisher is not available — install it (sudo pacman -S fisher) to use prompt frameworks."))
             note.add_css_class("muted")
             box.append(note)
 
@@ -596,7 +603,8 @@ class PromptTab(_StatusMixin):
         for key, _spec, _desc in _PROMPT_FRAMEWORKS:
             # The framework key is its GitHub owner/repo, so link to it like Starship.
             info = _FRAMEWORK_INFO.get(key, _FRAMEWORK_INFO_DEFAULT)
-            info += f"\n\n<b>More:</b> <a href='https://github.com/{key}'>github.com/{key}</a>"
+            more = GLib.markup_escape_text(_("More:"))
+            info += f"\n\n<b>{more}</b> <a href='https://github.com/{key}'>github.com/{key}</a>"
             self._stack.add_named(self._build_framework_page(key, info), f"framework:{key}")
         self._stack.add_named(self._build_starship_page(), "starship")
         return self._stack
@@ -617,36 +625,37 @@ class PromptTab(_StatusMixin):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         box.append(
             _intro(
-                "Tide configures itself through an interactive wizard, not variables. "
-                "Install it with Apply prompt above, then launch the wizard here."
+                _("Tide configures itself through an interactive wizard, not variables. "
+                  "Install it with Apply prompt above, then launch the wizard here.")
             )
         )
-        button = Gtk.Button(label="Run tide configure")
+        button = Gtk.Button(label=_("Run tide configure"))
         button.set_halign(Gtk.Align.START)
         button.connect("clicked", self._run_tide_configure)
         box.append(button)
         return box
 
     def _run_tide_configure(self, _btn):
-        self._set_status("Launching tide configure…")
+        self._set_status(_("Launching tide configure…"))
         # Interactive wizard in a visible terminal; guard on Tide actually being installed.
         command = "type -q tide; and tide configure; or echo 'Install Tide first: use Apply prompt above.'"
         ftt_fisher.run_async(command, lambda result: GLib.idle_add(self._tide_configure_done, result), snapshot=False)
 
     def _tide_configure_done(self, result):
         if result.ok:
-            self._set_status("tide configure finished. Open a new shell to see changes.")
+            self._set_status(_("tide configure finished. Open a new shell to see changes."))
         else:
-            self._set_status("Could not run tide configure — see the terminal.", error=True)
+            self._set_status(_("Could not run tide configure — see the terminal."), error=True)
         return False
 
     def _build_param_controls(self, key, prefs_key, name, controls):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         box.append(
             _intro(
-                f"Set the common {name} variables, then Apply — this makes {name} your prompt "
-                f"(installing it if needed) and writes these values. Colours are fish colours — "
-                "a name (blue, brgreen, normal) or a hex code (5f5f00); leave blank for the default."
+                _("Set the common {name} variables, then Apply — this makes {name} your prompt "
+                  "(installing it if needed) and writes these values. Colours are fish colours — "
+                  "a name (blue, brgreen, normal) or a hex code (5f5f00); leave blank for the default.")
+                .format(name=name)
             )
         )
         grid = Gtk.Grid()
@@ -667,7 +676,7 @@ class PromptTab(_StatusMixin):
             entries[suffix] = (entry, is_color)
         self._param_entries[prefs_key] = entries
         box.append(grid)
-        button = Gtk.Button(label=f"Apply {name} settings")
+        button = Gtk.Button(label=_("Apply {name} settings").format(name=name))
         button.add_css_class("suggested-action")
         button.set_halign(Gtk.Align.START)
         button.connect("clicked", lambda _b: self._apply_framework_params(key, prefs_key, name))
@@ -677,9 +686,9 @@ class PromptTab(_StatusMixin):
     def _symbol_field(self, entry):
         # Free-text entry plus a dropdown that inserts a common glyph (pick-or-type).
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        picker = Gtk.DropDown.new_from_strings(["Pick…", *_SYMBOL_PRESETS])
+        picker = Gtk.DropDown.new_from_strings([_("Pick…"), *_SYMBOL_PRESETS])
         picker.set_valign(Gtk.Align.CENTER)
-        picker.set_tooltip_text("Insert a common prompt symbol")
+        picker.set_tooltip_text(_("Insert a common prompt symbol"))
         picker.connect("notify::selected", self._on_symbol_picked, entry)
         box.append(entry)
         box.append(picker)
@@ -725,8 +734,8 @@ class PromptTab(_StatusMixin):
 
         page.append(
             _intro(
-                "Click a preset to apply it — writes ~/.config/starship.toml (backed up first). "
-                "Some presets need a Nerd Font to render their icons."
+                _("Click a preset to apply it — writes ~/.config/starship.toml (backed up first). "
+                  "Some presets need a Nerd Font to render their icons.")
             )
         )
         self._current_starship = self._prefs.get("current_starship_preset")
@@ -786,7 +795,7 @@ class PromptTab(_StatusMixin):
             apply_cmd = f"starship preset {name} -o '{_STARSHIP_CONFIG}' --force"
         # Back up an existing toml first, then write the chosen preset.
         backup = f"test -f '{_STARSHIP_CONFIG}'; and cp -f '{_STARSHIP_CONFIG}' '{_STARSHIP_CONFIG}.ftt-bak'"
-        self._set_status(f"Applying starship preset '{name}'…")
+        self._set_status(_("Applying Starship preset '{name}'…").format(name=name))
 
         def on_done(result):
             GLib.idle_add(self._starship_preset_done, name, result)
@@ -801,21 +810,22 @@ class PromptTab(_StatusMixin):
                 self._starship_cards[name].add_css_class("theme-current")
             self._current_starship = name
             self._prefs = ftt_config.update_prefs({"current_starship_preset": name})
-            self._set_status(f"Starship preset '{name}' applied. Open a new shell to see it.")
+            self._set_status(_("Starship preset '{name}' applied. Open a new shell to see it.").format(name=name))
         else:
-            self._set_status(f"Could not apply preset: {result.message or 'see terminal'}", error=True)
+            detail = result.message or _("see terminal")
+            self._set_status(_("Could not apply preset: {detail}").format(detail=detail), error=True)
         return False
 
     def _build_gallery_page(self):
         page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         page.append(
             _intro(
-                "Built-in styles ship with fish — zero dependencies. Click a card, then "
-                "Apply. The 'default' card is fish's plain prompt."
+                _("Built-in styles ship with fish — zero dependencies. Click a card, then "
+                  "Apply. The 'default' card is fish's plain prompt.")
             )
         )
         if not self._builtin_names:
-            note = _intro("No built-in prompts found.")
+            note = _intro(_("No built-in prompts found."))
             note.add_css_class("muted")
             page.append(note)
             return page
@@ -903,7 +913,7 @@ class PromptTab(_StatusMixin):
             prompt_key = rid
         else:
             if not self._selected_builtin:
-                self._set_status("Pick a built-in style first.", error=True)
+                self._set_status(_("Pick a built-in style first."), error=True)
                 return
             builtin_name = self._selected_builtin
             # The 'default' card is fish's plain prompt — a full reset, not a save.
@@ -919,12 +929,12 @@ class PromptTab(_StatusMixin):
     def _offer_starship_install(self, choice, prompt_key, builtin_name):
         dialog = Gtk.AlertDialog()
         dialog.set_modal(True)
-        dialog.set_message("Install starship?")
+        dialog.set_message(_("Install Starship?"))
         dialog.set_detail(
-            "Starship isn't installed. Install the starship package with pacman? "
-            "(You'll be asked for your password in a terminal.)"
+            _("Starship isn't installed. Install the starship package with pacman? "
+              "(You'll be asked for your password in a terminal.)")
         )
-        dialog.set_buttons(["Cancel", "Install starship"])
+        dialog.set_buttons([_("Cancel"), _("Install Starship")])
         dialog.set_cancel_button(0)
         dialog.set_default_button(1)
         dialog.choose(
@@ -938,10 +948,10 @@ class PromptTab(_StatusMixin):
         except GLib.Error:
             chosen = 0
         if chosen != 1:
-            self._set_status("Starship not installed — pick another prompt or install it, then Apply.")
+            self._set_status(_("Starship not installed — pick another prompt or install it, then Apply."))
             return
         self._apply_btn.set_sensitive(False)
-        self._set_status("Installing starship…")
+        self._set_status(_("Installing Starship…"))
 
         def on_done(res):
             GLib.idle_add(self._starship_installed, res, choice, prompt_key, builtin_name)
@@ -953,12 +963,13 @@ class PromptTab(_StatusMixin):
             self._do_prompt_apply(choice, prompt_key, builtin_name)
         else:
             self._apply_btn.set_sensitive(True)
-            self._set_status(f"Could not install starship: {result.message or 'see terminal'}", error=True)
+            detail = result.message or _("see terminal")
+            self._set_status(_("Could not install Starship: {detail}").format(detail=detail), error=True)
         return False
 
     def _do_prompt_apply(self, choice, prompt_key, builtin_name):
         self._apply_btn.set_sensitive(False)
-        self._set_status("Applying prompt…")
+        self._set_status(_("Applying prompt…"))
         frameworks = [(key, spec) for key, spec, _ in _PROMPT_FRAMEWORKS]
         is_starship = prompt_key == "starship"
 
@@ -982,10 +993,10 @@ class PromptTab(_StatusMixin):
             if builtin_name is not None:
                 updates["current_builtin"] = builtin_name
             self._prefs = ftt_config.update_prefs(updates)
-            self._set_status("Prompt applied. Open a new shell to see it.")
+            self._set_status(_("Prompt applied. Open a new shell to see it."))
         else:
-            detail = result.message or "see terminal for details"
-            self._set_status(f"Could not apply prompt: {detail}", error=True)
+            detail = result.message or _("see terminal for details")
+            self._set_status(_("Could not apply prompt: {detail}").format(detail=detail), error=True)
         return False
 
 
@@ -1052,7 +1063,7 @@ def _preview_markup(background, colors):
         for text, key in _PREVIEW_TOKENS
     )
     line2 = (
-        f"<span foreground='{col('fish_color_error')}'>error:</span> "
+    f"<span foreground='{col('fish_color_error')}'>{GLib.markup_escape_text(_('error:'))}</span> "
         f"<span foreground='{col('fish_color_autosuggestion')}'>"
         f"{GLib.markup_escape_text('press → to accept')}</span>"
     )
@@ -1134,7 +1145,7 @@ class ThemesTab(_StatusMixin):
     def _build(self):
         themes = ftt_theme.list_themes()
         if not themes:
-            return _notice("No themes found", "fish_config theme list returned nothing.")
+            return _notice(_("No themes found"), _("fish_config theme list returned nothing."))
         self._all_colors = ftt_theme.parse_all_themes(themes, self._variant)
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -1142,20 +1153,20 @@ class ThemesTab(_StatusMixin):
             getattr(box, f"set_margin_{side}")(16)
 
         header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        header.append(_intro("Click a theme to apply it. Open a new shell to see the colours."))
+        header.append(_intro(_("Click a theme to apply it. Open a new shell to see the colours.")))
         spacer = Gtk.Box()
         spacer.set_hexpand(True)
         header.append(spacer)
 
-        variant_label = Gtk.Label(label="Variant:")
-        variant_label.set_tooltip_text("Light or dark for themes that ship both (catppuccin, ayu, …)")
+        variant_label = Gtk.Label(label=_("Variant:"))
+        variant_label.set_tooltip_text(_("Light or dark for themes that ship both (catppuccin, ayu, …)"))
         header.append(variant_label)
-        self._variant_dropdown = Gtk.DropDown.new_from_strings(_VARIANTS)
+        self._variant_dropdown = Gtk.DropDown.new_from_strings([_("Dark"), _("Light")])
         self._variant_dropdown.set_selected(_VARIANTS.index(self._variant) if self._variant in _VARIANTS else 0)
         self._variant_dropdown.connect("notify::selected", self._on_variant_changed)
         header.append(self._variant_dropdown)
 
-        reset = Gtk.Button(label="Reset to default")
+        reset = Gtk.Button(label=_("Reset to default"))
         reset.connect("clicked", lambda _b: self._apply("default"))
         header.append(reset)
         box.append(header)
@@ -1231,7 +1242,7 @@ class ThemesTab(_StatusMixin):
         if self._busy:
             return
         self._busy = True
-        self._set_status(f"Applying {name}…")
+        self._set_status(_("Applying {name}…").format(name=name))
 
         def on_done(result):
             GLib.idle_add(self._apply_finished, name, result)
@@ -1247,10 +1258,10 @@ class ThemesTab(_StatusMixin):
                 self._cards[name].add_css_class("theme-current")
             self._current = name
             self._prefs = ftt_config.update_prefs({"current_theme": name})
-            self._set_status(f"Theme '{name}' applied. Open a new shell to see it.")
+            self._set_status(_("Theme '{name}' applied. Open a new shell to see it.").format(name=name))
         else:
-            detail = result.message or "see terminal for details"
-            self._set_status(f"Could not apply {name}: {detail}", error=True)
+            detail = result.message or _("see terminal for details")
+            self._set_status(_("Could not apply {name}: {detail}").format(name=name, detail=detail), error=True)
         return False
 
 # ── Palettes tab (tinty) ─────────────────────────────────────────────────────
@@ -1285,11 +1296,11 @@ class PalettesTab(_StatusMixin):
         self._rows = {}
 
         header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        title = _section("Terminal palettes — base16 & base24 (via tinty)")
+        title = _section(_("Terminal palettes — base16 & base24 (via tinty)"))
         title.set_hexpand(True)
         header.append(title)
         if ftt_tinty.is_available():
-            remove = Gtk.Button(label="Remove tinty")
+            remove = Gtk.Button(label=_("Remove tinty"))
             remove.add_css_class("destructive-action")
             remove.connect("clicked", lambda _b: self._remove_tinty())
             header.append(remove)
@@ -1297,10 +1308,10 @@ class PalettesTab(_StatusMixin):
 
         self._content.append(
             _intro(
-                "500+ palettes from tinted-theming. Applying one recolours your terminal's "
+                _("500+ palettes from tinted-theming. Applying one recolours your terminal's "
                 "16-colour ANSI palette and background — affecting everything in the terminal "
                 "(ls, git, vim …) — and re-applies in every new shell. It's a separate layer "
-                "on top of the fish syntax theme on the Themes tab."
+                "on top of the fish syntax theme on the Themes tab.")
             )
         )
 
@@ -1314,10 +1325,10 @@ class PalettesTab(_StatusMixin):
         self._content.append(self._init_status())
 
     def _render_install(self):
-        note = _intro("tinty isn't installed. Install it to add 500+ base16/base24 terminal palettes.")
+        note = _intro(_("tinty isn't installed. Install it to add 500+ base16/base24 terminal palettes."))
         note.add_css_class("muted")
         self._content.append(note)
-        install = Gtk.Button(label="Install tinty")
+        install = Gtk.Button(label=_("Install tinty"))
         install.add_css_class("suggested-action")
         install.set_halign(Gtk.Align.START)
         install.connect("clicked", lambda _b: self._install_tinty())
@@ -1325,10 +1336,10 @@ class PalettesTab(_StatusMixin):
 
     def _render_sync(self):
         # tinty is installed but its schemes aren't cloned yet (fresh install).
-        note = _intro("tinty is installed, but its palettes haven't been downloaded yet.")
+        note = _intro(_("tinty is installed, but its palettes haven't been downloaded yet."))
         note.add_css_class("muted")
         self._content.append(note)
-        sync = Gtk.Button(label="Download palettes")
+        sync = Gtk.Button(label=_("Download palettes"))
         sync.add_css_class("suggested-action")
         sync.set_halign(Gtk.Align.START)
         sync.connect("clicked", lambda _b: self._sync_palettes())
@@ -1342,14 +1353,14 @@ class PalettesTab(_StatusMixin):
 
         filters = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         search = Gtk.SearchEntry()
-        search.set_placeholder_text("Search palettes…")
+        search.set_placeholder_text(_("Search palettes…"))
         search.set_hexpand(True)
         search.connect("search-changed", self._on_search)
         filters.append(search)
-        system_dd = Gtk.DropDown.new_from_strings(_TINTY_SYSTEMS)
+        system_dd = Gtk.DropDown.new_from_strings([_("All systems"), *_TINTY_SYSTEMS[1:]])
         system_dd.connect("notify::selected", self._on_system)
         filters.append(system_dd)
-        variant_dd = Gtk.DropDown.new_from_strings(_TINTY_VARIANTS)
+        variant_dd = Gtk.DropDown.new_from_strings([_("All"), _("Dark"), _("Light")])
         variant_dd.connect("notify::selected", self._on_variant)
         filters.append(variant_dd)
         self._content.append(filters)
@@ -1422,7 +1433,7 @@ class PalettesTab(_StatusMixin):
         if self._busy:
             return
         self._busy = True
-        self._set_status(f"Applying {scheme['name']}…")
+        self._set_status(_("Applying {name}…").format(name=scheme["name"]))
 
         def on_done(result):
             GLib.idle_add(self._apply_finished, scheme, result)
@@ -1442,10 +1453,11 @@ class PalettesTab(_StatusMixin):
             # the whole block (never a partial dict — that would wipe greeting/abbreviations).
             prefs = ftt_config.update_prefs({"tinty": True, "current_tinty_scheme": scheme["id"]})
             ftt_managed.write_block(ftt_managed.settings_from_prefs(prefs))
-            self._set_status(f"Palette '{scheme['name']}' applied. Open a new shell to see it.")
+            self._set_status(_("Palette '{name}' applied. Open a new shell to see it.").format(name=scheme["name"]))
         else:
-            detail = result.message or "see terminal for details"
-            self._set_status(f"Could not apply {scheme['name']}: {detail}", error=True)
+            detail = result.message or _("see terminal for details")
+            self._set_status(_("Could not apply {name}: {detail}").format(name=scheme["name"], detail=detail),
+                             error=True)
         return False
 
     # ── install / sync / remove tinty itself ──────────────────────────────────
@@ -1455,13 +1467,13 @@ class PalettesTab(_StatusMixin):
         if self._busy:
             return
         self._busy = True
-        self._set_status("Installing tinty…")
+        self._set_status(_("Installing tinty…"))
         ftt_tinty.install_package_async(lambda _r: GLib.idle_add(self._after_install))
 
     def _after_install(self):
         if not ftt_tinty.is_available():  # install declined / failed — back to the button
             return self._setup_finished()
-        self._set_status("Downloading palettes…")
+        self._set_status(_("Downloading palettes…"))
         ftt_tinty.sync_async(lambda _r: GLib.idle_add(self._setup_finished))
         return False
 
@@ -1469,14 +1481,14 @@ class PalettesTab(_StatusMixin):
         if self._busy:
             return
         self._busy = True
-        self._set_status("Downloading palettes…")
+        self._set_status(_("Downloading palettes…"))
         ftt_tinty.sync_async(lambda _r: GLib.idle_add(self._setup_finished))
 
     def _remove_tinty(self):
         if self._busy:
             return
         self._busy = True
-        self._set_status("Removing tinty…")
+        self._set_status(_("Removing tinty…"))
         ftt_tinty.remove_package_async(lambda _r: GLib.idle_add(self._removed_finished))
 
     def _removed_finished(self):
@@ -1501,7 +1513,7 @@ _DEFAULT_GREETING = "Welcome to KIRO"
 
 # ASCII-art tools for the custom greeting. "none" = plain echo. Each maps to a
 # pacman package of the same name; botsay has no font/variant.
-_GREETING_TOOLS = ["None", "figlet", "toilet", "cowsay", "botsay"]
+_GREETING_TOOLS = [_("None"), "figlet", "toilet", "cowsay", "botsay"]
 _GREETING_TOOL_BY_INDEX = {0: "none", 1: "figlet", 2: "toilet", 3: "cowsay", 4: "botsay"}
 _GREETING_INDEX_BY_TOOL = {"figlet": 1, "toilet": 2, "cowsay": 3, "botsay": 4}
 _FIGLET_FONT_DIR = "/usr/share/figlet/fonts"
@@ -1586,32 +1598,34 @@ class SettingsTab(_StatusMixin):
             getattr(box, f"set_margin_{side}")(16)
 
         header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        header.append(_section("Greeting"))
+        header.append(_section(_("Greeting")))
         spacer = Gtk.Box()
         spacer.set_hexpand(True)
         header.append(spacer)
-        ff_btn = Gtk.Button(label="Open Fastfetch Tweak Tool")
+        ff_btn = Gtk.Button(label=_("Open Fastfetch Tweak Tool"))
         ff_btn.set_valign(Gtk.Align.CENTER)
         if shutil.which("fastfetch-tweak-tool"):
-            ff_btn.set_tooltip_text("Customise what fastfetch shows on launch")
+            ff_btn.set_tooltip_text(_("Customise what fastfetch shows on launch"))
             ff_btn.connect("clicked", self._open_fastfetch_tool)
         else:
             ff_btn.set_sensitive(False)
-            ff_btn.set_tooltip_text("fastfetch-tweak-tool is not installed")
+            ff_btn.set_tooltip_text(_("fastfetch-tweak-tool is not installed"))
         header.append(ff_btn)
         box.append(header)
         box.append(self._build_greeting())
 
-        apply_btn = Gtk.Button(label="Apply settings")
+        apply_btn = Gtk.Button(label=_("Apply settings"))
         apply_btn.add_css_class("suggested-action")
         apply_btn.set_halign(Gtk.Align.START)
         apply_btn.connect("clicked", self._apply_settings)
         box.append(apply_btn)
 
         box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
-        box.append(_section("Backup & restore"))
+        box.append(_section(_("Backup & restore")))
         box.append(self._build_backup())
 
+        box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+        box.append(self._language_box())
         box.append(self._init_status())
 
         scroller = Gtk.ScrolledWindow()
@@ -1620,6 +1634,40 @@ class SettingsTab(_StatusMixin):
         scroller.set_child(box)
         return scroller
 
+    def _language_box(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box.append(_section(_("Language")))
+        box.append(_intro(_("The app follows your system language. Pick another one to use that one instead.")))
+        self._codes = [None, *ftt_i18n.available()]
+        labels = [_("System ({language})").format(language=ftt_i18n.name(ftt_i18n.SYSTEM))]
+        labels.extend(ftt_i18n.name(code) for code in self._codes[1:])
+        dropdown = Gtk.DropDown.new_from_strings(labels)
+        dropdown.set_halign(Gtk.Align.START)
+        dropdown.set_selected(self._codes.index(ftt_i18n.chosen()))
+        dropdown.connect("notify::selected", self._on_language)
+        self._language_note = Gtk.Label(xalign=0, wrap=True)
+        self._btn_restart = Gtk.Button(label=_("Restart now"))
+        self._btn_restart.set_halign(Gtk.Align.START)
+        self._btn_restart.set_visible(False)
+        self._btn_restart.connect("clicked", self._on_restart)
+        for widget in (dropdown, self._language_note, self._btn_restart):
+            box.append(widget)
+        return box
+
+    def _on_language(self, dropdown, _pspec):
+        code = self._codes[dropdown.get_selected()]
+        ftt_i18n.save_choice(code)
+        changed = (code or ftt_i18n.SYSTEM) != (ftt_i18n.ACTIVE or ftt_i18n.SYSTEM)
+        self._language_note.set_text(
+            _("Saved. The app shows the new language when it starts again.") if changed else ""
+        )
+        self._btn_restart.set_visible(changed)
+
+    def _on_restart(self, _widget):
+        argv = [sys.executable, os.path.abspath(sys.argv[0]), *sys.argv[1:]]
+        ftt_i18n.restore_environment()
+        os.execv(sys.executable, argv)
+
     def _build_greeting(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         saved = self._prefs.get("greeting", {})
@@ -1627,10 +1675,10 @@ class SettingsTab(_StatusMixin):
 
         first = None
         for key, label in (
-            ("keep", "System default"),
-            ("off", "No greeting"),
-            ("fastfetch", "Show fastfetch on launch"),
-            ("custom", "Custom text"),
+            ("keep", _("System default")),
+            ("off", _("No greeting")),
+            ("fastfetch", _("Show fastfetch on launch")),
+            ("custom", _("Custom text")),
         ):
             radio = Gtk.CheckButton(label=label)
             if first is None:
@@ -1642,19 +1690,19 @@ class SettingsTab(_StatusMixin):
             box.append(radio)
 
         self._custom_entry = Gtk.Entry()
-        self._custom_entry.set_placeholder_text("Your greeting text")
+        self._custom_entry.set_placeholder_text(_("Your greeting text"))
         self._custom_entry.set_text(saved.get("text", _DEFAULT_GREETING))
         box.append(self._custom_entry)
 
         art_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        art_label = Gtk.Label(label="ASCII art:")
+        art_label = Gtk.Label(label=_("ASCII art:"))
         art_label.set_valign(Gtk.Align.CENTER)
         art_row.append(art_label)
         self._gen_tool = Gtk.DropDown.new_from_strings(_GREETING_TOOLS)
         self._gen_tool.set_selected(_GREETING_INDEX_BY_TOOL.get(saved.get("tool", "none"), 0))
         self._gen_tool.connect("notify::selected", self._on_tool_changed)
         art_row.append(self._gen_tool)
-        self._gen_font = Gtk.DropDown.new_from_strings(["(none)"])
+        self._gen_font = Gtk.DropDown.new_from_strings([_("(none)")])
         self._gen_font.set_hexpand(True)
         art_row.append(self._gen_font)
 
@@ -1662,18 +1710,18 @@ class SettingsTab(_StatusMixin):
         self._gen_color_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         self._gen_color = Gtk.Switch()
         self._gen_color.set_valign(Gtk.Align.CENTER)
-        color_label = Gtk.Label(label="Rainbow colour")
+        color_label = Gtk.Label(label=_("Rainbow colour"))
         color_label.set_valign(Gtk.Align.CENTER)
         self._gen_color_box.append(self._gen_color)
         self._gen_color_box.append(color_label)
         art_row.append(self._gen_color_box)
         box.append(art_row)
 
-        hint = _intro("Renders the custom text as ASCII art. If the tool isn't installed, Apply offers to install it.")
+        hint = _intro(_("Renders the custom text as ASCII art. If the tool isn't installed, Apply offers to install it."))
         hint.add_css_class("muted")
         box.append(hint)
 
-        self._with_fastfetch = Gtk.CheckButton(label="then show fastfetch below the text")
+        self._with_fastfetch = Gtk.CheckButton(label=_("then show fastfetch below the text"))
         self._with_fastfetch.set_active(bool(saved.get("with_fastfetch")))
         box.append(self._with_fastfetch)
 
@@ -1712,14 +1760,16 @@ class SettingsTab(_StatusMixin):
             try:
                 subprocess.Popen(["fastfetch-tweak-tool"])
             except OSError as exc:
-                GLib.idle_add(self._set_status, f"Could not open Fastfetch Tweak Tool: {exc}", True)
+                GLib.idle_add(
+                    self._set_status, _("Could not open Fastfetch Tweak Tool: {error}").format(error=exc), True
+                )
 
         threading.Thread(target=worker, daemon=True).start()
 
     def _build_backup(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
 
-        backup_now = Gtk.Button(label="Back up now")
+        backup_now = Gtk.Button(label=_("Back up now"))
         backup_now.set_halign(Gtk.Align.START)
         backup_now.connect("clicked", self._backup_now)
         box.append(backup_now)
@@ -1728,7 +1778,7 @@ class SettingsTab(_StatusMixin):
         self._backup_dropdown = Gtk.DropDown.new_from_strings(self._backup_names())
         self._backup_dropdown.set_hexpand(True)
         row.append(self._backup_dropdown)
-        restore = Gtk.Button(label="Restore selected")
+        restore = Gtk.Button(label=_("Restore selected"))
         restore.connect("clicked", self._restore_selected)
         row.append(restore)
         box.append(row)
@@ -1736,7 +1786,7 @@ class SettingsTab(_StatusMixin):
 
     def _backup_names(self):
         self._backups = ftt_fisher.list_backups()
-        return [os.path.basename(p) for p in self._backups] or ["(no backups yet)"]
+        return [os.path.basename(p) for p in self._backups] or [_("(no backups yet)")]
 
     # ── actions ───────────────────────────────────────────────────────────
     def _collect_settings(self):
@@ -1777,16 +1827,20 @@ class SettingsTab(_StatusMixin):
         self._do_apply(greeting)
 
     def _offer_install(self, packages, greeting):
-        names = " and ".join(packages)
-        verb = "is" if len(packages) == 1 else "are"
+        names = ", ".join(packages)
         dialog = Gtk.AlertDialog()
         dialog.set_modal(True)
-        dialog.set_message(f"Install {names}?")
+        dialog.set_message(_("Install {packages}?").format(packages=names))
         dialog.set_detail(
-            f"{names} {verb} not installed, so the greeting can't render fully. Install with "
-            "pacman? (You'll be asked for your password in a terminal.)"
+            ngettext(
+                "{packages} is not installed, so the greeting can't render fully. Install with pacman? "
+                "(You'll be asked for your password in a terminal.)",
+                "{packages} are not installed, so the greeting can't render fully. Install with pacman? "
+                "(You'll be asked for your password in a terminal.)",
+                len(packages),
+            ).format(packages=names)
         )
-        dialog.set_buttons(["Cancel", "Install"])
+        dialog.set_buttons([_("Cancel"), _("Install")])
         dialog.set_cancel_button(0)
         dialog.set_default_button(1)
         dialog.choose(self.widget.get_root(), None, lambda dlg, res: self._install_choice(dlg, res, packages, greeting))
@@ -1798,9 +1852,9 @@ class SettingsTab(_StatusMixin):
             chosen = 0
         if chosen != 1:
             self._busy = False
-            self._set_status("Greeting not applied — install the package(s) or change the tool.")
+            self._set_status(_("Greeting not applied — install the package or change the tool."))
             return
-        self._set_status(f"Installing {' '.join(packages)}…")
+        self._set_status(_("Installing {packages}…").format(packages=" ".join(packages)))
 
         def on_done(res):
             GLib.idle_add(self._install_done, packages, greeting, res)
@@ -1813,9 +1867,10 @@ class SettingsTab(_StatusMixin):
         if result.ok and not still:
             self._do_apply(greeting)
         elif result.ok:
-            self._set_status(f"Still not found: {', '.join(still)}.", error=True)
+            self._set_status(_("Still not found: {packages}.").format(packages=", ".join(still)), error=True)
         else:
-            self._set_status(f"Could not install: {result.message or 'see terminal'}", error=True)
+            detail = result.message or _("see terminal")
+            self._set_status(_("Could not install: {detail}").format(detail=detail), error=True)
         return False
 
     def _do_apply(self, greeting):
@@ -1824,7 +1879,7 @@ class SettingsTab(_StatusMixin):
         # abbreviations the Abbreviations tab wrote to the same managed block.
         prefs = ftt_config.load_prefs()
         prefs["greeting"] = greeting
-        self._set_status("Applying settings…")
+        self._set_status(_("Applying settings…"))
 
         def on_done(result):
             GLib.idle_add(self._apply_finished, greeting, result)
@@ -1836,9 +1891,9 @@ class SettingsTab(_StatusMixin):
         if result.ok:
             self._prefs = ftt_config.update_prefs({"greeting": greeting})
             self._refresh_backups()
-            self._set_status("Settings applied. Open a new shell to see them.")
+            self._set_status(_("Settings applied. Open a new shell to see them."))
         else:
-            self._set_status(f"Could not apply settings: {result.message}", error=True)
+            self._set_status(_("Could not apply settings: {detail}").format(detail=result.message), error=True)
         return False
 
     def _backup_now(self, _btn):
@@ -1851,25 +1906,27 @@ class SettingsTab(_StatusMixin):
     def _backup_done(self, path):
         self._refresh_backups()
         if path:
-            self._set_status(f"Backed up to {os.path.basename(path)}.")
+            self._set_status(_("Backed up to {path}.").format(path=os.path.basename(path)))
         else:
-            self._set_status("Nothing to back up (no fish config found).", error=True)
+            self._set_status(_("Nothing to back up (no fish config found)."), error=True)
         return False
 
     def _restore_selected(self, _btn):
         if not self._backups:
-            self._set_status("No backup to restore.", error=True)
+            self._set_status(_("No backup to restore."), error=True)
             return
         path = self._backups[self._backup_dropdown.get_selected()]
-        self._set_status(f"Restoring {os.path.basename(path)}…")
+        self._set_status(_("Restoring {path}…").format(path=os.path.basename(path)))
 
         def worker():
             ftt_fisher.snapshot_now()
             try:
                 ftt_fisher.restore_backup(path)
-                GLib.idle_add(self._set_status, f"Restored {os.path.basename(path)}. Open a new shell.")
+                GLib.idle_add(
+                    self._set_status, _("Restored {path}. Open a new shell.").format(path=os.path.basename(path))
+                )
             except OSError as exc:
-                GLib.idle_add(self._set_status, f"Restore failed: {exc}", True)
+                GLib.idle_add(self._set_status, _("Restore failed: {error}").format(error=exc), True)
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -1884,16 +1941,17 @@ class SettingsTab(_StatusMixin):
 _GIT_ABBR_PLUGIN = "jhillyerd/plugin-git"
 
 # Greeting mode → overview label.
-_GREETING_LABELS = {"keep": "system default", "off": "none", "fastfetch": "fastfetch", "custom": "custom"}
+_GREETING_LABELS = {"keep": N_("system default"), "off": N_("none"), "fastfetch": "fastfetch",
+                    "custom": N_("custom")}
 
 # Current-setup overview rows: (prefs/derived key, caption).
 _OVERVIEW_ROWS = [
-    ("prompt", "Prompt"),
-    ("theme", "Theme"),
-    ("palette", "Palette"),
-    ("plugins", "Plugins"),
-    ("greeting", "Greeting"),
-    ("abbr", "Abbreviations"),
+    ("prompt", _("Prompt")),
+    ("theme", _("Theme")),
+    ("palette", _("Palette")),
+    ("plugins", _("Plugins")),
+    ("greeting", _("Greeting")),
+    ("abbr", _("Abbreviations")),
 ]
 
 
@@ -1901,12 +1959,12 @@ def _prompt_label(prefs):
     """Human label for the current prompt recorded in prefs."""
     rid = prefs.get("current_prompt", "default")
     if rid == "starship":
-        return "Starship"
+        return _("Starship")
     if rid == "builtin":
-        return f"Built-in: {prefs.get('current_builtin', '?')}"
+        return _("Built-in: {name}").format(name=prefs.get("current_builtin", "?"))
     if rid.startswith("framework:"):
         return rid.rsplit("/", 1)[-1].capitalize()
-    return "Default"
+    return _("Default")
 
 
 def _consensus_installed(installed):
@@ -1952,11 +2010,11 @@ class PresetsTab(_StatusMixin):
         box.append(self._build_overview())
         box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
 
-        box.append(_section("Presets"))
+        box.append(_section(_("Presets")))
         box.append(
             _intro(
-                "One click sets a whole look — prompt, plugins, theme and greeting "
-                "together. Your fish config is backed up first."
+                _("One click sets a whole look — prompt, plugins, theme and greeting "
+                  "together. Your fish config is backed up first.")
             )
         )
 
@@ -1984,7 +2042,7 @@ class PresetsTab(_StatusMixin):
         panel.add_css_class("info-panel")
 
         header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        header.append(_section("Current setup"))
+        header.append(_section(_("Current setup")))
         spacer = Gtk.Box()
         spacer.set_hexpand(True)
         header.append(spacer)
@@ -2025,14 +2083,17 @@ class PresetsTab(_StatusMixin):
         self._ov_labels["prompt"].set_text(_prompt_label(prefs))
         self._ov_labels["theme"].set_text(prefs.get("current_theme") or "default")
         self._ov_labels["palette"].set_text(palette or "none")
-        self._ov_labels["plugins"].set_text(", ".join(consensus) if consensus else "none")
+        self._ov_labels["plugins"].set_text(", ".join(consensus) if consensus else _("none"))
         self._ov_labels["greeting"].set_text(
-            _GREETING_LABELS.get(prefs.get("greeting", {}).get("mode", "keep"), "unchanged")
+            _(_GREETING_LABELS.get(prefs.get("greeting", {}).get("mode", "keep"), N_("unchanged")))
         )
-        self._ov_labels["abbr"].set_text(f"{count} custom" + (" · git set on" if git_on else ""))
+        abbr_summary = ngettext("{count} custom abbreviation", "{count} custom abbreviations", count)
+        if git_on:
+            abbr_summary += _(" · git set on")
+        self._ov_labels["abbr"].set_text(abbr_summary.format(count=count))
 
         name = _matched_preset(prefs, installed)
-        self._ov_badge.set_text(f"✓ matches {name}" if name else "Custom setup")
+        self._ov_badge.set_text(_("✓ matches {name}").format(name=_(name)) if name else _("Custom setup"))
         self._ov_badge.remove_css_class("status-line" if name is None else "muted")
         self._ov_badge.add_css_class("status-line" if name else "muted")
         return False
@@ -2044,15 +2105,15 @@ class PresetsTab(_StatusMixin):
 
         text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         text.set_hexpand(True)
-        name = Gtk.Label(label=preset["name"], xalign=0)
+        name = Gtk.Label(label=_(preset["name"]), xalign=0)
         name.add_css_class("plugin-name")
-        summary = Gtk.Label(label=preset["summary"], xalign=0)
+        summary = Gtk.Label(label=_(preset["summary"]), xalign=0)
         summary.add_css_class("plugin-desc")
         summary.set_wrap(True)
         text.append(name)
         text.append(summary)
 
-        button = Gtk.Button(label="Apply")
+        button = Gtk.Button(label=_("Apply"))
         button.set_valign(Gtk.Align.CENTER)
         button.connect("clicked", lambda _b, p=preset: self._apply(p))
         self._apply_btns.append(button)
@@ -2064,12 +2125,13 @@ class PresetsTab(_StatusMixin):
     def _apply(self, preset):
         dialog = Gtk.AlertDialog()
         dialog.set_modal(True)
-        dialog.set_message(f"Apply the {preset['name']} preset?")
+        name = _(preset["name"])
+        dialog.set_message(_("Apply the {name} preset?").format(name=name))
         dialog.set_detail(
-            f"{preset['summary']}.\n\nThis installs plugins and sets your prompt, theme "
-            "and greeting — your fish config is backed up first."
+            _("{summary}.\n\nThis installs plugins and sets your prompt, theme "
+              "and greeting — your fish config is backed up first.").format(summary=_(preset["summary"]))
         )
-        dialog.set_buttons(["Cancel", "Apply"])
+        dialog.set_buttons([_("Cancel"), _("Apply")])
         dialog.set_cancel_button(0)
         dialog.set_default_button(1)
         dialog.choose(self.widget.get_root(), None, lambda dlg, res: self._confirm(dlg, res, preset))
@@ -2082,7 +2144,7 @@ class PresetsTab(_StatusMixin):
         if chosen != 1:
             return
         self._set_buttons(False)
-        self._set_status(f"Applying the {preset['name']} preset…")
+        self._set_status(_("Applying the {name} preset…").format(name=_(preset["name"])))
         frameworks = [(key, spec) for key, spec, _ in _PROMPT_FRAMEWORKS]
 
         def on_done(res):
@@ -2094,10 +2156,11 @@ class PresetsTab(_StatusMixin):
         self._set_buttons(True)
         if result.ok:
             self._refresh_overview()
-            self._set_status(f"{preset['name']} preset applied. Open a new shell to see it.")
+            self._set_status(_("{name} preset applied. Open a new shell to see it.").format(name=_(preset["name"])))
         else:
-            detail = result.message or "see terminal for details"
-            self._set_status(f"{preset['name']} preset failed: {detail}", error=True)
+            detail = result.message or _("see terminal for details")
+            self._set_status(_("{name} preset failed: {detail}").format(name=_(preset["name"]), detail=detail),
+                             error=True)
         return False
 
     def _set_buttons(self, sensitive):
@@ -2120,7 +2183,7 @@ def _parse_abbr_names(output):
     return names
 
 
-_COLLISION_HINT = "Already defined elsewhere (e.g. a plugin) — your version overrides it in new shells."
+_COLLISION_HINT = _("Already defined elsewhere (e.g. a plugin) — your version overrides it in new shells.")
 
 # A sample of the most-used git abbreviations plugin-git installs (~100 total).
 _GIT_CHEATSHEET = [
@@ -2161,18 +2224,18 @@ class _AbbrRow:
         self.widget.set_margin_end(6)
 
         self.name_entry = Gtk.Entry()
-        self.name_entry.set_placeholder_text("name")
+        self.name_entry.set_placeholder_text(_("name"))
         self.name_entry.set_text(name)
         self.name_entry.set_width_chars(12)
         self.name_entry.connect("changed", lambda _e: on_name_changed())
 
         self.expansion_entry = Gtk.Entry()
-        self.expansion_entry.set_placeholder_text("expands to…")
+        self.expansion_entry.set_placeholder_text(_("expands to…"))
         self.expansion_entry.set_text(expansion)
         self.expansion_entry.set_hexpand(True)
 
         delete_btn = Gtk.Button.new_from_icon_name("edit-delete-symbolic")
-        delete_btn.set_tooltip_text("Remove")
+        delete_btn.set_tooltip_text(_("Remove"))
         delete_btn.set_valign(Gtk.Align.CENTER)
         delete_btn.connect("clicked", lambda _b: self._on_delete(self))
 
@@ -2219,32 +2282,34 @@ class AbbrTab(_FisherTab):
         for side in ("top", "bottom", "start", "end"):
             getattr(box, f"set_margin_{side}")(16)
 
-        box.append(_section("Git abbreviations"))
+        box.append(_section(_("Git abbreviations")))
         box.append(
             _intro(
-                "Install a curated set of git abbreviations (oh-my-zsh style) — "
-                "gst → git status, gco → git checkout, and ~100 more — via fisher."
+                _("Install a curated set of git abbreviations (oh-my-zsh style) — "
+                  "gst → git status, gco → git checkout, and ~100 more — via fisher.")
             )
         )
         if ftt_fisher.is_fisher_available():
             listbox = Gtk.ListBox()
             listbox.set_selection_mode(Gtk.SelectionMode.NONE)
             listbox.add_css_class("plugin-list")
-            row = _PluginRow(self.GIT_PLUGIN, "oh-my-zsh-style git abbreviations (gst, gco, gp, …)", self._on_toggle)
+            row = _PluginRow(
+                self.GIT_PLUGIN, _("oh-my-zsh-style git abbreviations (gst, gco, gp, …)"), self._on_toggle
+            )
             self._rows[self.GIT_PLUGIN] = row
             listbox.append(row.widget)
             box.append(listbox)
         else:
-            note = _intro("fisher is not available — install it (sudo pacman -S fisher) to add the git set.")
+            note = _intro(_("fisher is not available — install it (sudo pacman -S fisher) to add the git set."))
             note.add_css_class("muted")
             box.append(note)
 
         box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
-        box.append(_section("Your abbreviations"))
+        box.append(_section(_("Your abbreviations")))
         box.append(
             _intro(
-                "Add your own. Abbreviations expand inline as you type — e.g. 'k' → 'kubectl'. "
-                "Names cannot contain spaces. Apply, then open a new shell to use them."
+                _("Add your own. Abbreviations expand inline as you type — e.g. 'k' → 'kubectl'. "
+                  "Names cannot contain spaces. Apply, then open a new shell to use them.")
             )
         )
 
@@ -2257,9 +2322,9 @@ class AbbrTab(_FisherTab):
             self._add_row()
 
         buttons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        add_btn = Gtk.Button(label="Add abbreviation")
+        add_btn = Gtk.Button(label=_("Add abbreviation"))
         add_btn.connect("clicked", lambda _b: self._add_row())
-        self._apply_btn = Gtk.Button(label="Apply abbreviations")
+        self._apply_btn = Gtk.Button(label=_("Apply abbreviations"))
         self._apply_btn.add_css_class("suggested-action")
         self._apply_btn.connect("clicked", self._apply)
         buttons.append(add_btn)
@@ -2283,10 +2348,10 @@ class AbbrTab(_FisherTab):
 
     def _build_cheatsheet(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        box.append(_section("Most-used git abbreviations"))
+        box.append(_section(_("Most-used git abbreviations")))
         note = _intro(
-            "A sample of what the toggle above installs — plugin-git ships ~100. "
-            "They expand inline as you type, just like your own."
+            _("A sample of what the toggle above installs — plugin-git ships ~100. "
+              "They expand inline as you type, just like your own.")
         )
         note.add_css_class("muted")
         box.append(note)
@@ -2353,13 +2418,15 @@ class AbbrTab(_FisherTab):
             if not name and not expansion:
                 continue
             if not name or not expansion:
-                return None, f"'{name or expansion}': both a name and an expansion are required."
+                return None, _("'{value}': both a name and an expansion are required.").format(
+                    value=name or expansion
+                )
             if any(c.isspace() for c in name):
-                return None, f"'{name}': abbreviation names cannot contain spaces."
+                return None, _("'{name}': abbreviation names cannot contain spaces.").format(name=name)
             if "'" in name or "\\" in name:
-                return None, f"'{name}': names cannot contain quotes or backslashes."
+                return None, _("'{name}': names cannot contain quotes or backslashes.").format(name=name)
             if name in seen:
-                return None, f"'{name}' is listed twice — names must be unique."
+                return None, _("'{name}' is listed twice — names must be unique.").format(name=name)
             seen.add(name)
             rows.append({"name": name, "expansion": expansion})
         return rows, None
@@ -2375,7 +2442,7 @@ class AbbrTab(_FisherTab):
         self._apply_btn.set_sensitive(False)
         prefs = ftt_config.load_prefs()
         prefs["abbreviations"] = rows
-        self._set_status("Applying abbreviations…")
+        self._set_status(_("Applying abbreviations…"))
 
         def on_done(result):
             GLib.idle_add(self._applied, rows, result)
@@ -2390,11 +2457,15 @@ class AbbrTab(_FisherTab):
             self._managed_names = {r["name"] for r in rows}
             self._load_existing()
             count = len(rows)
-            plural = "" if count == 1 else "s"
-            self._set_status(f"{count} abbreviation{plural} applied. Open a new shell to use them.")
+            message = ngettext(
+                "{count} abbreviation applied. Open a new shell to use it.",
+                "{count} abbreviations applied. Open a new shell to use them.",
+                count,
+            )
+            self._set_status(message.format(count=count))
         else:
-            detail = result.message or "see terminal for details"
-            self._set_status(f"Could not apply: {detail}", error=True)
+            detail = result.message or _("see terminal for details")
+            self._set_status(_("Could not apply: {detail}").format(detail=detail), error=True)
         return False
 
 
@@ -2404,11 +2475,11 @@ class AbbrTab(_FisherTab):
 # Funding channels — GitHub Sponsors first (~100% payout). Keep in sync with
 # kiro-website .github/FUNDING.yml if those change.
 _FUNDING = [
-    ("GitHub Sponsors", "https://github.com/sponsors/erikdubois", "best value — almost all goes to the project"),
-    ("Ko-fi", "https://ko-fi.com/erikdubois", "buy a coffee — one-off tip"),
-    ("Patreon", "https://www.patreon.com/kiroproject", "membership tiers + perks"),
-    ("YouTube membership", "https://www.youtube.com/@ErikDubois/join", "join on YouTube"),
-    ("PayPal", "https://www.paypal.me/erikdubois", "direct one-off"),
+    ("GitHub Sponsors", "https://github.com/sponsors/erikdubois", _("best value — almost all goes to the project")),
+    ("Ko-fi", "https://ko-fi.com/erikdubois", _("buy a coffee — one-off tip")),
+    ("Patreon", "https://www.patreon.com/kiroproject", _("membership tiers + perks")),
+    (_("YouTube membership"), "https://www.youtube.com/@ErikDubois/join", _("join on YouTube")),
+    ("PayPal", "https://www.paypal.me/erikdubois", _("direct one-off")),
 ]
 
 
@@ -2417,14 +2488,15 @@ def _open_url(parent, url):
 
 
 def _show_support_dialog(window):
-    dlg = Gtk.Window(title="Support Kiro", transient_for=window, modal=True)
+    support_title = _("Support {product}").format(product="Kiro")
+    dlg = Gtk.Window(title=support_title, transient_for=window, modal=True)
     dlg.set_default_size(440, -1)
     box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
     for side in ("start", "end", "top", "bottom"):
         getattr(box, f"set_margin_{side}")(18)
 
     heading = Gtk.Label(xalign=0)
-    heading.set_markup("<b>Support Kiro</b>")
+    heading.set_markup(f"<b>{GLib.markup_escape_text(support_title)}</b>")
     box.append(heading)
 
     intro = Gtk.Label(xalign=0)
@@ -2432,9 +2504,9 @@ def _show_support_dialog(window):
     intro.set_wrap(True)
     intro.set_max_width_chars(52)
     intro.set_label(
-        "Kiro and its tools are built by one person, for the community — and kept free. "
-        "If Fish Tweak Tool saves you time, a little support keeps the work going. "
-        "Thank you for being here."
+        _("Our tools are built by one person, for the community — and kept free. "
+          "If {product} saves you time, a little support keeps the work going. "
+          "Thank you for being here.").format(product="Fish Tweak Tool")
     )
     box.append(intro)
 
@@ -2451,7 +2523,7 @@ def _show_support_dialog(window):
         btn.connect("clicked", lambda _w, u=url: _open_url(dlg, u))
         box.append(btn)
 
-    close = Gtk.Button(label="Close")
+    close = Gtk.Button(label=_("Close"))
     close.set_halign(Gtk.Align.END)
     close.connect("clicked", lambda _w: dlg.close())
     box.append(close)
@@ -2476,11 +2548,11 @@ def build(window, fish_version):
     lbl_version = Gtk.Label(label=ver_text)
     lbl_version.add_css_class("info-label")
     lbl_version.set_valign(Gtk.Align.CENTER)
-    btn_support = Gtk.Button(label="♥ Support")
-    btn_support.set_tooltip_text("Support Kiro's development")
+    btn_support = Gtk.Button(label=_("♥ Support"))
+    btn_support.set_tooltip_text(_("Support Kiro's development"))
     btn_support.add_css_class("support-button")
     btn_support.connect("clicked", lambda _w: _show_support_dialog(window))
-    btn_quit = Gtk.Button(label="Quit")
+    btn_quit = Gtk.Button(label=_("Quit"))
     btn_quit.connect("clicked", lambda _w: window.close())
     header.append(title)
     header.append(lbl_version)
@@ -2492,13 +2564,13 @@ def build(window, fish_version):
     notebook = Gtk.Notebook()
     notebook.set_scrollable(True)
     notebook.set_vexpand(True)
-    notebook.append_page(PresetsTab().widget, Gtk.Label(label="Presets"))
-    notebook.append_page(PluginsTab().widget, Gtk.Label(label="Plugins"))
-    notebook.append_page(PromptTab().widget, Gtk.Label(label="Prompt"))
-    notebook.append_page(ThemesTab().widget, Gtk.Label(label="Themes"))
-    notebook.append_page(PalettesTab().widget, Gtk.Label(label="Palettes"))
-    notebook.append_page(AbbrTab().widget, Gtk.Label(label="Abbreviations"))
-    notebook.append_page(SettingsTab().widget, Gtk.Label(label="Settings"))
+    notebook.append_page(PresetsTab().widget, Gtk.Label(label=_("Presets")))
+    notebook.append_page(PluginsTab().widget, Gtk.Label(label=_("Plugins")))
+    notebook.append_page(PromptTab().widget, Gtk.Label(label=_("Prompt")))
+    notebook.append_page(ThemesTab().widget, Gtk.Label(label=_("Themes")))
+    notebook.append_page(PalettesTab().widget, Gtk.Label(label=_("Palettes")))
+    notebook.append_page(AbbrTab().widget, Gtk.Label(label=_("Abbreviations")))
+    notebook.append_page(SettingsTab().widget, Gtk.Label(label=_("Settings")))
     root.append(notebook)
 
     window.set_child(root)

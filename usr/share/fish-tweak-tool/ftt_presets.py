@@ -13,13 +13,14 @@ import ftt_fisher
 import ftt_managed
 import ftt_prompt
 import ftt_theme
+from ftt_i18n import N_  # noqa: E402
 
 # Each preset: name + a one-line summary + the components it sets.
 # prompt is ("default",) | ("builtin", name) | ("framework", install-spec).
 PRESETS = [
     {
-        "name": "Kiro",
-        "summary": "Tide prompt · Nord theme · fzf + autopair + sponge · fastfetch greeting",
+        "name": N_("Kiro"),
+        "summary": N_("Tide prompt · Nord theme · fzf + autopair + sponge · fastfetch greeting"),
         "prompt": ("framework", "IlanCosman/tide@v6"),
         "theme": "nord",
         "variant": "dark",
@@ -27,8 +28,8 @@ PRESETS = [
         "greeting": {"mode": "fastfetch", "text": ""},
     },
     {
-        "name": "Minimal",
-        "summary": "Pure prompt · default theme · autopair only · no greeting",
+        "name": N_("Minimal"),
+        "summary": N_("Pure prompt · default theme · autopair only · no greeting"),
         "prompt": ("framework", "pure-fish/pure"),
         "theme": "default",
         "variant": "dark",
@@ -36,8 +37,8 @@ PRESETS = [
         "greeting": {"mode": "off", "text": ""},
     },
     {
-        "name": "Full",
-        "summary": "Tide prompt · Dracula theme · all four plugins · fastfetch greeting",
+        "name": N_("Full"),
+        "summary": N_("Tide prompt · Dracula theme · all four plugins · fastfetch greeting"),
         "prompt": ("framework", "IlanCosman/tide@v6"),
         "theme": "dracula",
         "variant": "dark",

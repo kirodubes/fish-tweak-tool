@@ -1,0 +1,1100 @@
+# Japanese translations for fish-tweak-tool package.
+# Copyright (C) 2026 Fish Tweak Tool contributors.
+# This file is distributed under the same license as the fish-tweak-tool package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: fish-tweak-tool\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-31 15:27+0100\n"
+"PO-Revision-Date: 2026-10-31 15:16+0100\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: Japanese\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: usr/share/fish-tweak-tool/fish-tweak-tool.py:50
+msgid "unknown"
+msgstr "不明"
+
+#: usr/share/fish-tweak-tool/ftt_fisher.py:55
+msgid "operation timed out"
+msgstr "操作がタイムアウトしました"
+
+#: usr/share/fish-tweak-tool/ftt_fisher.py:57
+msgid "fish not found"
+msgstr "fish が見つかりません"
+
+#: usr/share/fish-tweak-tool/ftt_fisher.py:129
+msgid "This app is running the following command on your system:"
+msgstr "このアプリはシステムで次のコマンドを実行しています："
+
+#: usr/share/fish-tweak-tool/ftt_fisher.py:130
+msgid "Done (success). Press enter to close."
+msgstr "完了しました。Enter キーを押すと閉じます。"
+
+#: usr/share/fish-tweak-tool/ftt_fisher.py:131
+#, python-brace-format
+msgid "Failed (exit {status}). Press enter to close."
+msgstr "失敗しました（終了コード {status}）。Enter キーを押すと閉じます。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:36
+msgid "Fuzzy search over history, files, git, processes"
+msgstr "履歴、ファイル、git、プロセスをあいまい検索"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:37
+msgid "Auto-closes brackets, quotes and parentheses"
+msgstr "括弧、引用符を自動で閉じる機能"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:38
+msgid "Drops failed commands from history"
+msgstr "失敗したコマンドを履歴から削除"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:39
+msgid "Expands .. and ... as you type"
+msgstr "入力中に .. と ... を展開"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:46
+msgid "Modern async prompt with a setup wizard (tide configure)"
+msgstr "セットアップウィザード（tide configure）付きの最新の非同期プロンプト"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:47
+msgid "Ultra-minimal async prompt; fast git + duration"
+msgstr "超軽量な非同期プロンプト。高速な git 情報と実行時間表示"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:48
+msgid "Minimal clean prompt; directory + git branch"
+msgstr "シンプルで軽量なプロンプト。ディレクトリと git ブランチを表示"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:54
+msgid ""
+"<b>Tide</b> — the most configurable modern fish prompt. Async, so it renders "
+"instantly and fills in git status in the background.\n"
+"\n"
+"<b>First steps:</b> after installing, run <tt>tide configure</tt> in a "
+"terminal to launch the interactive wizard (style, icons, colours). Re-run it "
+"any time to change the look."
+msgstr ""
+"<b>Tide</b>：最も細かく設定できる、fish 用の最新プロンプトです。非同期で描画"
+"されるためすぐに表示され、git の状態はバックグラウンドで反映されます。\n"
+"\n"
+"<b>最初の手順：</b>インストール後、ターミナルで <tt>tide configure</tt> を実"
+"行すると、対話型ウィザード（スタイル、アイコン、色）が起動します。外観を変更"
+"するときはいつでも再実行できます。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:61
+msgid ""
+"<b>Hydro</b> — an ultra-minimal async prompt; the fastest of the bunch. "
+"Shows the directory, git branch/status and command duration.\n"
+"\n"
+"<b>First steps:</b> zero config needed. Tune the common colours and prompt "
+"symbol below, or set any <tt>hydro_*</tt> variable yourself."
+msgstr ""
+"<b>Hydro</b>：選択肢の中で最も高速な超軽量の非同期プロンプトです。"
+"ディレクトリ、git のブランチと状態、コマンドの実行時間を表示します。\n"
+"\n"
+"<b>最初の手順：</b>設定は不要です。下の一般的な色とプロンプト記号を調整するか"
+"、任意の <tt>hydro_*</tt> 変数を設定してください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:67
+msgid ""
+"<b>Pure</b> — a clean, minimal prompt ported from zsh Pure. Shows the "
+"directory and git branch; the <tt>❯</tt> symbol turns red when the last "
+"command failed.\n"
+"\n"
+"<b>First steps:</b> works out of the box. Tune the common colours and prompt "
+"symbol below, or set any <tt>pure_*</tt> variable yourself."
+msgstr ""
+"<b>Pure</b>：zsh Pure を移植した、すっきりとした軽量プロンプトです。"
+"ディレクトリと git ブランチを表示し、直前のコマンドが失敗すると <tt>❯</tt> 記"
+"号が赤くなります。\n"
+"\n"
+"<b>最初の手順：</b>そのまま使用できます。下の一般的な色とプロンプト記号を調整"
+"するか、任意の <tt>pure_*</tt> 変数を設定してください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:75
+msgid "Select a prompt framework above to see details and first steps."
+msgstr ""
+"詳細と最初の手順を表示するには、上からプロンプトフレームワークを選択してくだ"
+"さい。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:84
+#: usr/share/fish-tweak-tool/ftt_gui.py:92
+msgid "Prompt symbol"
+msgstr "プロンプト記号"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:85
+msgid "Directory colour"
+msgstr "ディレクトリの色"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:86
+msgid "Git colour"
+msgstr "git の色"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:87
+#: usr/share/fish-tweak-tool/ftt_gui.py:98
+msgid "Duration colour"
+msgstr "実行時間の色"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:88
+#: usr/share/fish-tweak-tool/ftt_gui.py:96
+msgid "Error colour"
+msgstr "エラーの色"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:89
+msgid "Prompt-symbol colour"
+msgstr "プロンプト記号の色"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:93
+msgid "Primary colour"
+msgstr "メインカラー"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:94
+msgid "Info colour"
+msgstr "情報の色"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:95
+msgid "Success colour"
+msgstr "成功時の色"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:97
+msgid "Muted colour (git)"
+msgstr "控えめな色（git）"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:114
+msgid ""
+"<b>Starship</b> — a fast, highly-customisable cross-shell prompt (a single "
+"Rust binary, not a fisher plugin). Applying installs the <tt>starship</tt> "
+"package if needed and enables it via <tt>starship init fish</tt>.\n"
+"\n"
+"<b>First steps:</b> configure it in <tt>~/.config/starship.toml</tt>; browse "
+"presets and modules:"
+msgstr ""
+"<b>Starship</b>：高速で高度にカスタマイズできる、複数のシェルに対応した"
+"プロンプトです（fisher プラグインではなく、単体の Rust バイナリです）。適用時"
+"に必要であれば <tt>starship</tt> パッケージをインストールし、<tt>starship "
+"init fish</tt> で有効にします。\n"
+"\n"
+"<b>最初の手順：</b><tt>~/.config/starship.toml</tt> で設定し、プリセットと"
+"モジュールを確認してください："
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:227
+msgid "Open this plugin on GitHub"
+msgstr "このプラグインを GitHub で開く"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:340
+#, python-brace-format
+msgid "Installed {plugin}."
+msgstr "{plugin} をインストールしました。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:340
+#, python-brace-format
+msgid "Removed {plugin}."
+msgstr "{plugin} を削除しました。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:344
+#: usr/share/fish-tweak-tool/ftt_gui.py:998
+#: usr/share/fish-tweak-tool/ftt_gui.py:1263
+#: usr/share/fish-tweak-tool/ftt_gui.py:1458
+#: usr/share/fish-tweak-tool/ftt_gui.py:2161
+#: usr/share/fish-tweak-tool/ftt_gui.py:2467
+msgid "see terminal for details"
+msgstr "詳細はターミナルを確認してください"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:345
+#, python-brace-format
+msgid "Could not change {plugin}: {detail}"
+msgstr "{plugin} を変更できませんでした：{detail}"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:362
+msgid "Install it with:  sudo pacman -S fisher"
+msgstr "次のコマンドでインストール：  sudo pacman -S fisher"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:362
+msgid "fisher is not available"
+msgstr "fisher を利用できません"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:370
+msgid ""
+"Toggle a plugin to install or remove it with fisher. Your fish config is "
+"backed up before the first change."
+msgstr ""
+"プラグインを切り替えると、fisher でインストールまたは削除できます。最初の変更"
+"前に fish の設定がバックアップされます。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:553
+#: usr/share/fish-tweak-tool/ftt_gui.py:1949
+#: usr/share/fish-tweak-tool/ftt_gui.py:2569
+msgid "Prompt"
+msgstr "プロンプト"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:556
+msgid ""
+"Choose one prompt. fish has a single prompt slot, so applying one removes "
+"any other framework and makes this your prompt."
+msgstr ""
+"プロンプトを 1 つ選択してください。fish のプロンプトスロットは 1 つだけのた"
+"め、適用すると他のフレームワークが削除され、選択したものが使われます。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:563
+msgid "Built-in — fish's bundled styles"
+msgstr "組み込み：fish 付属のスタイル"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:567
+#, python-brace-format
+msgid "{name} — {description}"
+msgstr "{name}：{description}"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:570
+msgid "Starship — fast, customisable cross-shell prompt (pacman)"
+msgstr "Starship：高速でカスタマイズ可能な複数シェル対応プロンプト（pacman）"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:573
+msgid "Apply prompt"
+msgstr "プロンプトを適用"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:580
+msgid ""
+"fisher is not available — install it (sudo pacman -S fisher) to use prompt "
+"frameworks."
+msgstr ""
+"fisher を利用できません。プロンプトフレームワークを使うには、sudo pacman -S "
+"fisher でインストールしてください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:606
+msgid "More:"
+msgstr "詳細："
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:628
+msgid ""
+"Tide configures itself through an interactive wizard, not variables. Install "
+"it with Apply prompt above, then launch the wizard here."
+msgstr ""
+"Tide は変数ではなく、対話型ウィザードで設定します。上の「プロンプトを適用」で"
+"インストールし、ここからウィザードを起動してください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:632
+msgid "Run tide configure"
+msgstr "tide configure を実行"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:639
+msgid "Launching tide configure…"
+msgstr "tide configure を起動しています…"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:646
+msgid "tide configure finished. Open a new shell to see changes."
+msgstr ""
+"tide configure が完了しました。変更を確認するには新しいシェルを開いてくださ"
+"い。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:648
+msgid "Could not run tide configure — see the terminal."
+msgstr "tide configure を実行できませんでした。ターミナルを確認してください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:655
+#, python-brace-format
+msgid ""
+"Set the common {name} variables, then Apply — this makes {name} your prompt "
+"(installing it if needed) and writes these values. Colours are fish colours "
+"— a name (blue, brgreen, normal) or a hex code (5f5f00); leave blank for the "
+"default."
+msgstr ""
+"一般的な {name} 変数を設定して「適用」を押すと、{name} がプロンプトになり（必"
+"要に応じてインストールされ）、設定値が書き込まれます。色には fish の色名"
+"（blue、brgreen、normal）または 16 進コード（5f5f00）を指定します。既定値を使"
+"う場合は空欄にしてください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:679
+#, python-brace-format
+msgid "Apply {name} settings"
+msgstr "{name} の設定を適用"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:689
+msgid "Pick…"
+msgstr "選択…"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:691
+msgid "Insert a common prompt symbol"
+msgstr "一般的なプロンプト記号を挿入"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:737
+msgid ""
+"Click a preset to apply it — writes ~/.config/starship.toml (backed up "
+"first). Some presets need a Nerd Font to render their icons."
+msgstr ""
+"プリセットをクリックすると適用され、~/.config/starship.toml に書き込まれます"
+"（先にバックアップされます）。アイコンの表示には Nerd Font が必要なプリセット"
+"もあります。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:798
+#, python-brace-format
+msgid "Applying Starship preset '{name}'…"
+msgstr "Starship のプリセット「{name}」を適用しています…"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:813
+#, python-brace-format
+msgid "Starship preset '{name}' applied. Open a new shell to see it."
+msgstr ""
+"Starship のプリセット「{name}」を適用しました。表示するには新しいシェルを開い"
+"てください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:815
+#: usr/share/fish-tweak-tool/ftt_gui.py:966
+#: usr/share/fish-tweak-tool/ftt_gui.py:1872
+msgid "see terminal"
+msgstr "ターミナルを確認"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:816
+#, python-brace-format
+msgid "Could not apply preset: {detail}"
+msgstr "プリセットを適用できませんでした：{detail}"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:823
+msgid ""
+"Built-in styles ship with fish — zero dependencies. Click a card, then "
+"Apply. The 'default' card is fish's plain prompt."
+msgstr ""
+"fish に付属する組み込みスタイルで、依存関係はありません。カードをクリックして"
+"「適用」を押してください。「default」カードは fish の標準プロンプトです。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:828
+msgid "No built-in prompts found."
+msgstr "組み込みプロンプトが見つかりません。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:916
+msgid "Pick a built-in style first."
+msgstr "最初に組み込みスタイルを選択してください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:932
+msgid "Install Starship?"
+msgstr "Starship をインストールしますか？"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:934
+msgid ""
+"Starship isn't installed. Install the starship package with pacman? (You'll "
+"be asked for your password in a terminal.)"
+msgstr ""
+"Starship はインストールされていません。pacman で starship パッケージをインス"
+"トールしますか？（ターミナルでパスワードの入力が求められます。）"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:937
+#: usr/share/fish-tweak-tool/ftt_gui.py:1843
+#: usr/share/fish-tweak-tool/ftt_gui.py:2134
+msgid "Cancel"
+msgstr "キャンセル"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:937
+msgid "Install Starship"
+msgstr "Starship をインストール"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:951
+msgid "Starship not installed — pick another prompt or install it, then Apply."
+msgstr ""
+"Starship はインストールされていません。別のプロンプトを選ぶか、Starship を"
+"インストールしてから「適用」を押してください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:954
+msgid "Installing Starship…"
+msgstr "Starship をインストールしています…"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:967
+#, python-brace-format
+msgid "Could not install Starship: {detail}"
+msgstr "Starship をインストールできませんでした：{detail}"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:972
+msgid "Applying prompt…"
+msgstr "プロンプトを適用しています…"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:996
+msgid "Prompt applied. Open a new shell to see it."
+msgstr "プロンプトを適用しました。表示するには新しいシェルを開いてください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:999
+#, python-brace-format
+msgid "Could not apply prompt: {detail}"
+msgstr "プロンプトを適用できませんでした：{detail}"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1066
+msgid "error:"
+msgstr "エラー："
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1148
+msgid "No themes found"
+msgstr "テーマが見つかりません"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1148
+msgid "fish_config theme list returned nothing."
+msgstr "fish_config theme list の結果がありません。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1156
+msgid "Click a theme to apply it. Open a new shell to see the colours."
+msgstr ""
+"テーマをクリックすると適用されます。色を確認するには新しいシェルを開いてくだ"
+"さい。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1161
+msgid "Variant:"
+msgstr "バリアント："
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1162
+msgid "Light or dark for themes that ship both (catppuccin, ayu, …)"
+msgstr "ライト版とダーク版の両方があるテーマ（catppuccin、ayu、…）のバリアントを選択"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1164
+#: usr/share/fish-tweak-tool/ftt_gui.py:1363
+msgid "Dark"
+msgstr "ダーク"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1164
+#: usr/share/fish-tweak-tool/ftt_gui.py:1363
+msgid "Light"
+msgstr "ライト"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1169
+msgid "Reset to default"
+msgstr "既定値に戻す"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1245
+#: usr/share/fish-tweak-tool/ftt_gui.py:1436
+#, python-brace-format
+msgid "Applying {name}…"
+msgstr "{name} を適用しています…"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1261
+#, python-brace-format
+msgid "Theme '{name}' applied. Open a new shell to see it."
+msgstr ""
+"テーマ「{name}」を適用しました。表示するには新しいシェルを開いてください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1264
+#: usr/share/fish-tweak-tool/ftt_gui.py:1459
+#, python-brace-format
+msgid "Could not apply {name}: {detail}"
+msgstr "{name} を適用できませんでした：{detail}"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1299
+msgid "Terminal palettes — base16 & base24 (via tinty)"
+msgstr "ターミナルのパレット：base16 と base24（tinty 経由）"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1303
+msgid "Remove tinty"
+msgstr "tinty を削除"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1311
+msgid ""
+"500+ palettes from tinted-theming. Applying one recolours your terminal's 16-"
+"colour ANSI palette and background — affecting everything in the terminal "
+"(ls, git, vim …) — and re-applies in every new shell. It's a separate layer "
+"on top of the fish syntax theme on the Themes tab."
+msgstr ""
+"tinted-theming の 500 種類以上のパレットです。適用すると、ターミナルの 16 色 "
+"ANSI パレットと背景が変わり、ターミナル内のすべて（ls、git、vim など）に反映"
+"され、新しいシェルを開くたびに再適用されます。「テーマ」タブの fish 構文テー"
+"マとは別のレイヤーです。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1328
+msgid ""
+"tinty isn't installed. Install it to add 500+ base16/base24 terminal "
+"palettes."
+msgstr ""
+"tinty がインストールされていません。500 種類以上の base16/base24 ターミナルパ"
+"レットを追加するにはインストールしてください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1331
+msgid "Install tinty"
+msgstr "tinty をインストール"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1339
+msgid "tinty is installed, but its palettes haven't been downloaded yet."
+msgstr ""
+"tinty はインストールされていますが、パレットはまだダウンロードされていませ"
+"ん。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1342
+msgid "Download palettes"
+msgstr "パレットをダウンロード"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1356
+msgid "Search palettes…"
+msgstr "パレットを検索…"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1360
+msgid "All systems"
+msgstr "すべてのシステム"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1363
+msgid "All"
+msgstr "すべて"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1456
+#, python-brace-format
+msgid "Palette '{name}' applied. Open a new shell to see it."
+msgstr ""
+"パレット「{name}」を適用しました。表示するには新しいシェルを開いてください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1470
+msgid "Installing tinty…"
+msgstr "tinty をインストールしています…"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1476
+#: usr/share/fish-tweak-tool/ftt_gui.py:1484
+msgid "Downloading palettes…"
+msgstr "パレットをダウンロードしています…"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1491
+msgid "Removing tinty…"
+msgstr "tinty を削除しています…"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1516
+msgid "None"
+msgstr "なし"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1601
+#: usr/share/fish-tweak-tool/ftt_gui.py:1953
+msgid "Greeting"
+msgstr "あいさつ"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1605
+msgid "Open Fastfetch Tweak Tool"
+msgstr "Fastfetch Tweak Tool を開く"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1608
+msgid "Customise what fastfetch shows on launch"
+msgstr "起動時に fastfetch が表示する内容をカスタマイズ"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1612
+msgid "fastfetch-tweak-tool is not installed"
+msgstr "fastfetch-tweak-tool がインストールされていません"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1617
+msgid "Apply settings"
+msgstr "設定を適用"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1624
+msgid "Backup & restore"
+msgstr "バックアップと復元"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1639
+msgid "Language"
+msgstr "言語"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1640
+msgid ""
+"The app follows your system language. Pick another one to use that one "
+"instead."
+msgstr ""
+"アプリはシステムの言語に従います。別の言語を使う場合は選択してください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1642
+#, python-brace-format
+msgid "System ({language})"
+msgstr "システム（{language}）"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1649
+msgid "Restart now"
+msgstr "今すぐ再起動"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1662
+msgid "Saved. The app shows the new language when it starts again."
+msgstr "保存しました。次回の起動時に新しい言語で表示されます。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1678
+msgid "System default"
+msgstr "システムの既定値"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1679
+msgid "No greeting"
+msgstr "あいさつなし"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1680
+msgid "Show fastfetch on launch"
+msgstr "起動時に fastfetch を表示"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1681
+msgid "Custom text"
+msgstr "カスタムテキスト"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1693
+msgid "Your greeting text"
+msgstr "あいさつ文"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1698
+msgid "ASCII art:"
+msgstr "ASCII アート："
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1705
+msgid "(none)"
+msgstr "（なし）"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1713
+msgid "Rainbow colour"
+msgstr "虹色"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1720
+msgid ""
+"Renders the custom text as ASCII art. If the tool isn't installed, Apply "
+"offers to install it."
+msgstr ""
+"カスタムテキストを ASCII アートとして描画します。ツールがインストールされてい"
+"ない場合、「適用」からインストールできます。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1724
+msgid "then show fastfetch below the text"
+msgstr "その後、テキストの下に fastfetch を表示"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1764
+#, python-brace-format
+msgid "Could not open Fastfetch Tweak Tool: {error}"
+msgstr "Fastfetch Tweak Tool を開けませんでした：{error}"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1772
+msgid "Back up now"
+msgstr "今すぐバックアップ"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1781
+msgid "Restore selected"
+msgstr "選択項目を復元"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1789
+msgid "(no backups yet)"
+msgstr "（バックアップはまだありません）"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1833
+#, python-brace-format
+msgid "Install {packages}?"
+msgstr "{packages} をインストールしますか？"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1836
+#, python-brace-format
+msgid ""
+"{packages} is not installed, so the greeting can't render fully. Install "
+"with pacman? (You'll be asked for your password in a terminal.)"
+msgid_plural ""
+"{packages} are not installed, so the greeting can't render fully. Install "
+"with pacman? (You'll be asked for your password in a terminal.)"
+msgstr[0] ""
+"{packages} がインストールされていないため、あいさつを完全に表示できません。"
+"pacman でインストールしますか？（ターミナルでパスワードの入力が求められま"
+"す。）"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1843
+msgid "Install"
+msgstr "インストール"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1855
+msgid "Greeting not applied — install the package or change the tool."
+msgstr ""
+"あいさつを適用できませんでした。パッケージをインストールするか、ツールを変更"
+"してください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1857
+#, python-brace-format
+msgid "Installing {packages}…"
+msgstr "{packages} をインストールしています…"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1870
+#, python-brace-format
+msgid "Still not found: {packages}."
+msgstr "まだ見つかりません：{packages}。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1873
+#, python-brace-format
+msgid "Could not install: {detail}"
+msgstr "インストールできませんでした：{detail}"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1882
+msgid "Applying settings…"
+msgstr "設定を適用しています…"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1894
+msgid "Settings applied. Open a new shell to see them."
+msgstr "設定を適用しました。表示するには新しいシェルを開いてください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1896
+#, python-brace-format
+msgid "Could not apply settings: {detail}"
+msgstr "設定を適用できませんでした：{detail}"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1909
+#, python-brace-format
+msgid "Backed up to {path}."
+msgstr "{path} にバックアップしました。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1911
+msgid "Nothing to back up (no fish config found)."
+msgstr "バックアップするものがありません（fish の設定が見つかりません）。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1916
+msgid "No backup to restore."
+msgstr "復元できるバックアップがありません。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1919
+#, python-brace-format
+msgid "Restoring {path}…"
+msgstr "{path} を復元しています…"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1926
+#, python-brace-format
+msgid "Restored {path}. Open a new shell."
+msgstr "{path} を復元しました。新しいシェルを開いてください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1929
+#, python-brace-format
+msgid "Restore failed: {error}"
+msgstr "復元に失敗しました：{error}"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1944
+#: usr/share/fish-tweak-tool/ftt_gui.py:2086
+msgid "none"
+msgstr "なし"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1944
+msgid "system default"
+msgstr "システムの既定値"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1945
+msgid "custom"
+msgstr "カスタム"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1950
+msgid "Theme"
+msgstr "テーマ"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1951
+msgid "Palette"
+msgstr "パレット"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1952
+#: usr/share/fish-tweak-tool/ftt_gui.py:2568
+msgid "Plugins"
+msgstr "プラグイン"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1954
+#: usr/share/fish-tweak-tool/ftt_gui.py:2572
+msgid "Abbreviations"
+msgstr "略語"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1962
+msgid "Starship"
+msgstr "Starship"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1964
+#, python-brace-format
+msgid "Built-in: {name}"
+msgstr "組み込み：{name}"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:1967
+msgid "Default"
+msgstr "既定"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2013
+#: usr/share/fish-tweak-tool/ftt_gui.py:2567
+msgid "Presets"
+msgstr "プリセット"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2016
+msgid ""
+"One click sets a whole look — prompt, plugins, theme and greeting together. "
+"Your fish config is backed up first."
+msgstr ""
+"ワンクリックでプロンプト、プラグイン、テーマ、あいさつをまとめて設定します。"
+"最初に fish の設定がバックアップされます。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2045
+msgid "Current setup"
+msgstr "現在の設定"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2088
+msgid "unchanged"
+msgstr "変更なし"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2090
+#, python-brace-format
+msgid "{count} custom abbreviation"
+msgid_plural "{count} custom abbreviations"
+msgstr[0] "カスタム略語 {count} 個"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2092
+msgid " · git set on"
+msgstr " · git セット有効"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2096
+msgid "Custom setup"
+msgstr "カスタム設定"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2096
+#, python-brace-format
+msgid "✓ matches {name}"
+msgstr "✓ {name} と一致"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2116
+#: usr/share/fish-tweak-tool/ftt_gui.py:2134
+msgid "Apply"
+msgstr "適用"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2129
+#, python-brace-format
+msgid "Apply the {name} preset?"
+msgstr "{name} プリセットを適用しますか？"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2131
+#, python-brace-format
+msgid ""
+"{summary}.\n"
+"\n"
+"This installs plugins and sets your prompt, theme and greeting — your fish "
+"config is backed up first."
+msgstr ""
+"{summary}。\n"
+"\n"
+"プラグインをインストールし、プロンプト、テーマ、あいさつを設定します。最初に "
+"fish の設定がバックアップされます。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2147
+#, python-brace-format
+msgid "Applying the {name} preset…"
+msgstr "{name} プリセットを適用しています…"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2159
+#, python-brace-format
+msgid "{name} preset applied. Open a new shell to see it."
+msgstr ""
+"{name} プリセットを適用しました。表示するには新しいシェルを開いてください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2162
+#, python-brace-format
+msgid "{name} preset failed: {detail}"
+msgstr "{name} プリセットの適用に失敗しました：{detail}"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2186
+msgid ""
+"Already defined elsewhere (e.g. a plugin) — your version overrides it in new "
+"shells."
+msgstr ""
+"別の場所（プラグインなど）ですでに定義されています。新しいシェルではこの設定"
+"が優先されます。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2227
+msgid "name"
+msgstr "名前"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2233
+msgid "expands to…"
+msgstr "展開後…"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2238
+msgid "Remove"
+msgstr "削除"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2285
+msgid "Git abbreviations"
+msgstr "git の略語"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2288
+msgid ""
+"Install a curated set of git abbreviations (oh-my-zsh style) — gst → git "
+"status, gco → git checkout, and ~100 more — via fisher."
+msgstr ""
+"厳選した git 略語セット（oh-my-zsh 風）を fisher でインストールします。gst → "
+"git status、gco → git checkout など、約 100 個です。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2297
+msgid "oh-my-zsh-style git abbreviations (gst, gco, gp, …)"
+msgstr "oh-my-zsh 風の git 略語（gst、gco、gp、…）"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2303
+msgid ""
+"fisher is not available — install it (sudo pacman -S fisher) to add the git "
+"set."
+msgstr ""
+"fisher を利用できません。git セットを追加するには、sudo pacman -S fisher で"
+"インストールしてください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2308
+msgid "Your abbreviations"
+msgstr "自分の略語"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2311
+msgid ""
+"Add your own. Abbreviations expand inline as you type — e.g. 'k' → "
+"'kubectl'. Names cannot contain spaces. Apply, then open a new shell to use "
+"them."
+msgstr ""
+"独自の略語を追加できます。入力中にインラインで展開されます（例：「k」→"
+"「kubectl」）。名前にスペースは使用できません。適用後、新しいシェルを開くと使"
+"えます。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2325
+msgid "Add abbreviation"
+msgstr "略語を追加"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2327
+msgid "Apply abbreviations"
+msgstr "略語を適用"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2351
+msgid "Most-used git abbreviations"
+msgstr "よく使う git 略語"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2353
+msgid ""
+"A sample of what the toggle above installs — plugin-git ships ~100. They "
+"expand inline as you type, just like your own."
+msgstr ""
+"上の切り替えでインストールされる略語の一部です。plugin-git には約 100 個あり"
+"ます。自分の略語と同じように入力中にインラインで展開されます。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2421
+#, python-brace-format
+msgid "'{value}': both a name and an expansion are required."
+msgstr "「{value}」：名前と展開後の値の両方が必要です。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2425
+#, python-brace-format
+msgid "'{name}': abbreviation names cannot contain spaces."
+msgstr "「{name}」：略語名にスペースは使用できません。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2427
+#, python-brace-format
+msgid "'{name}': names cannot contain quotes or backslashes."
+msgstr "「{name}」：名前に引用符やバックスラッシュは使用できません。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2429
+#, python-brace-format
+msgid "'{name}' is listed twice — names must be unique."
+msgstr "「{name}」が重複しています。名前は一意である必要があります。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2445
+msgid "Applying abbreviations…"
+msgstr "略語を適用しています…"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2461
+#, python-brace-format
+msgid "{count} abbreviation applied. Open a new shell to use it."
+msgid_plural "{count} abbreviations applied. Open a new shell to use them."
+msgstr[0] ""
+"略語を {count} 個適用しました。使うには新しいシェルを開いてください。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2468
+#, python-brace-format
+msgid "Could not apply: {detail}"
+msgstr "適用できませんでした：{detail}"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2478
+msgid "best value — almost all goes to the project"
+msgstr "おすすめ：ほぼ全額がプロジェクトに届きます"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2479
+msgid "buy a coffee — one-off tip"
+msgstr "コーヒーをおごる：1 回きりのチップ"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2480
+msgid "membership tiers + perks"
+msgstr "特典付きのメンバーシッププラン"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2481
+msgid "YouTube membership"
+msgstr "YouTube メンバーシップ"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2481
+msgid "join on YouTube"
+msgstr "YouTube でメンバーになる"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2482
+msgid "direct one-off"
+msgstr "直接の 1 回きりの寄付"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2491
+#, python-brace-format
+msgid "Support {product}"
+msgstr "{product} を支援"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2507
+#, python-brace-format
+msgid ""
+"Our tools are built by one person, for the community — and kept free. If "
+"{product} saves you time, a little support keeps the work going. Thank you "
+"for being here."
+msgstr ""
+"私たちのツールは、コミュニティのために一人で開発し、無料で提供しています。"
+"{product} が時間の節約に役立っているなら、少しのご支援が開発の継続につながり"
+"ます。ご利用ありがとうございます。"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2526
+msgid "Close"
+msgstr "閉じる"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2551
+msgid "♥ Support"
+msgstr "♥ 支援する"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2552
+msgid "Support Kiro's development"
+msgstr "Kiro の開発を支援"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2555
+msgid "Quit"
+msgstr "終了"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2570
+msgid "Themes"
+msgstr "テーマ"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2571
+msgid "Palettes"
+msgstr "パレット"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2573
+msgid "Settings"
+msgstr "設定"
+
+#: usr/share/fish-tweak-tool/ftt_presets.py:22
+msgid "Kiro"
+msgstr "Kiro"
+
+#: usr/share/fish-tweak-tool/ftt_presets.py:23
+msgid "Tide prompt · Nord theme · fzf + autopair + sponge · fastfetch greeting"
+msgstr ""
+"Tide プロンプト · Nord テーマ · fzf + autopair + sponge · fastfetch のあいさ"
+"つ"
+
+#: usr/share/fish-tweak-tool/ftt_presets.py:31
+msgid "Minimal"
+msgstr "ミニマル"
+
+#: usr/share/fish-tweak-tool/ftt_presets.py:32
+msgid "Pure prompt · default theme · autopair only · no greeting"
+msgstr "Pure プロンプト · 既定テーマ · autopair のみ · あいさつなし"
+
+#: usr/share/fish-tweak-tool/ftt_presets.py:40
+msgid "Full"
+msgstr "フル"
+
+#: usr/share/fish-tweak-tool/ftt_presets.py:41
+msgid "Tide prompt · Dracula theme · all four plugins · fastfetch greeting"
+msgstr ""
+"Tide プロンプト · Dracula テーマ · 4 つすべてのプラグイン · fastfetch のあい"
+"さつ"
+
+#: po/fish-tweak-tool.desktop.in:2
+msgid "Fish Tweak Tool"
+msgstr "Fish Tweak Tool"
+
+#: po/fish-tweak-tool.desktop.in:3
+msgid "Fish Shell Configuration Tool"
+msgstr "Fish シェル設定ツール"
+
+#: po/fish-tweak-tool.desktop.in:4
+msgid "Configure the fish shell — prompt, plugins, themes, and greeting"
+msgstr "fish シェルを設定：プロンプト、プラグイン、テーマ、あいさつ"
+
+#: po/fish-tweak-tool.desktop.in:10
+msgid "fish;shell;prompt;theme;plugin;fisher;tide;tweak"
+msgstr ""
+"fish;shell;prompt;theme;plugin;fisher;tide;tweak;シェル;プロンプト;テーマ;プ"
+"ラグイン;調整;"

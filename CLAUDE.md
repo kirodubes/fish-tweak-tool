@@ -221,6 +221,15 @@ Render-test with a throwaway `NON_UNIQUE` app id, never the real
 - Section dividers (`# ── Name ──────`) only in functions 50+ lines.
 - No numbered widget names (`hbox1`, `vbox2`) — use descriptive names.
 
+## Translations (since 2026-10-31)
+
+- `ftt_i18n.py` (the shared Kiro i18n module): domain `fish-tweak-tool`, catalogs in `usr/share/locale`, the choice in
+  the app's prefs (`ftt_config`), `FTT_LANGUAGE` beats it and the system language; sibling fallback pt→pt_BR, zh→zh_CN.
+- Every visible string goes through `_()` as a whole sentence with named placeholders; counts use `ngettext`; preset
+  names are `N_()` keys translated where shown. Never translated: fish commands, config keys, theme/plugin names, logs.
+- After changing any visible text: `po/make-mo.sh`. Edit the menu entry in `po/fish-tweak-tool.desktop.in`, never in
+  `usr/share/applications/` (overwritten). Rules and tools: Kiro-HQ `TRANSLATIONS/`.
+
 ## Frozen Files
 
 - `usr/bin/fish-tweak-tool` — never edit without an explicit file-specific
