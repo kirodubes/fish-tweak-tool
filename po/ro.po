@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: fish-tweak-tool\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-31 15:27+0100\n"
+"POT-Creation-Date: 2026-10-31 15:44+0100\n"
 "PO-Revision-Date: 2026-10-31 15:16+0100\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: Romanian\n"
@@ -99,8 +99,8 @@ msgstr ""
 "Afișează directorul, ramura/starea git și durata comenzii.\n"
 "\n"
 "<b>Primii pași:</b> nu necesită configurare. Ajustează culorile uzuale și "
-"simbolul promptului de mai jos sau setează singur orice variabilă <tt>"
-"hydro_*</tt>."
+"simbolul promptului de mai jos sau setează singur orice variabilă "
+"<tt>hydro_*</tt>."
 
 #: usr/share/fish-tweak-tool/ftt_gui.py:67
 msgid ""
@@ -116,8 +116,8 @@ msgstr ""
 "comandă a eșuat.\n"
 "\n"
 "<b>Primii pași:</b> funcționează imediat. Ajustează culorile uzuale și "
-"simbolul promptului de mai jos sau setează singur orice variabilă <tt>"
-"pure_*</tt>."
+"simbolul promptului de mai jos sau setează singur orice variabilă "
+"<tt>pure_*</tt>."
 
 #: usr/share/fish-tweak-tool/ftt_gui.py:75
 msgid "Select a prompt framework above to see details and first steps."
@@ -203,8 +203,8 @@ msgstr "{plugin} a fost eliminat."
 #: usr/share/fish-tweak-tool/ftt_gui.py:998
 #: usr/share/fish-tweak-tool/ftt_gui.py:1263
 #: usr/share/fish-tweak-tool/ftt_gui.py:1458
-#: usr/share/fish-tweak-tool/ftt_gui.py:2161
-#: usr/share/fish-tweak-tool/ftt_gui.py:2467
+#: usr/share/fish-tweak-tool/ftt_gui.py:2125
+#: usr/share/fish-tweak-tool/ftt_gui.py:2431
 msgid "see terminal for details"
 msgstr "vezi terminalul pentru detalii"
 
@@ -230,7 +230,7 @@ msgstr ""
 "fisher. Configurația fish este salvată înainte de prima modificare."
 
 #: usr/share/fish-tweak-tool/ftt_gui.py:553
-#: usr/share/fish-tweak-tool/ftt_gui.py:1949
+#: usr/share/fish-tweak-tool/ftt_gui.py:1913
 #: usr/share/fish-tweak-tool/ftt_gui.py:2569
 msgid "Prompt"
 msgstr "Prompt"
@@ -349,7 +349,7 @@ msgstr ""
 
 #: usr/share/fish-tweak-tool/ftt_gui.py:815
 #: usr/share/fish-tweak-tool/ftt_gui.py:966
-#: usr/share/fish-tweak-tool/ftt_gui.py:1872
+#: usr/share/fish-tweak-tool/ftt_gui.py:1836
 msgid "see terminal"
 msgstr "vezi terminalul"
 
@@ -387,8 +387,8 @@ msgstr ""
 "cere parola într-un terminal.)"
 
 #: usr/share/fish-tweak-tool/ftt_gui.py:937
-#: usr/share/fish-tweak-tool/ftt_gui.py:1843
-#: usr/share/fish-tweak-tool/ftt_gui.py:2134
+#: usr/share/fish-tweak-tool/ftt_gui.py:1807
+#: usr/share/fish-tweak-tool/ftt_gui.py:2098
 msgid "Cancel"
 msgstr "Anulează"
 
@@ -399,8 +399,8 @@ msgstr "Instalează Starship"
 #: usr/share/fish-tweak-tool/ftt_gui.py:951
 msgid "Starship not installed — pick another prompt or install it, then Apply."
 msgstr ""
-"Starship nu este instalat: alege alt prompt sau instalează-l, apoi apasă „"
-"Aplică promptul”."
+"Starship nu este instalat: alege alt prompt sau instalează-l, apoi apasă "
+"„Aplică promptul”."
 
 #: usr/share/fish-tweak-tool/ftt_gui.py:954
 msgid "Installing Starship…"
@@ -559,7 +559,7 @@ msgid "None"
 msgstr "Niciuna"
 
 #: usr/share/fish-tweak-tool/ftt_gui.py:1601
-#: usr/share/fish-tweak-tool/ftt_gui.py:1953
+#: usr/share/fish-tweak-tool/ftt_gui.py:1917
 msgid "Greeting"
 msgstr "Mesaj de întâmpinare"
 
@@ -583,64 +583,39 @@ msgstr "Aplică setările"
 msgid "Backup & restore"
 msgstr "Copie de siguranță și restaurare"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1639
-msgid "Language"
-msgstr "Limbă"
-
-#: usr/share/fish-tweak-tool/ftt_gui.py:1640
-msgid ""
-"The app follows your system language. Pick another one to use that one "
-"instead."
-msgstr ""
-"Aplicația folosește limba sistemului. Alege altă limbă dacă vrei să o "
-"folosești în locul ei."
-
 #: usr/share/fish-tweak-tool/ftt_gui.py:1642
-#, python-brace-format
-msgid "System ({language})"
-msgstr "Sistem ({language})"
-
-#: usr/share/fish-tweak-tool/ftt_gui.py:1649
-msgid "Restart now"
-msgstr "Repornește acum"
-
-#: usr/share/fish-tweak-tool/ftt_gui.py:1662
-msgid "Saved. The app shows the new language when it starts again."
-msgstr "Salvat. Aplicația va afișa noua limbă la următoarea pornire."
-
-#: usr/share/fish-tweak-tool/ftt_gui.py:1678
 msgid "System default"
 msgstr "Valoarea implicită a sistemului"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1679
+#: usr/share/fish-tweak-tool/ftt_gui.py:1643
 msgid "No greeting"
 msgstr "Fără mesaj de întâmpinare"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1680
+#: usr/share/fish-tweak-tool/ftt_gui.py:1644
 msgid "Show fastfetch on launch"
 msgstr "Afișează fastfetch la pornire"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1681
+#: usr/share/fish-tweak-tool/ftt_gui.py:1645
 msgid "Custom text"
 msgstr "Text personalizat"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1693
+#: usr/share/fish-tweak-tool/ftt_gui.py:1657
 msgid "Your greeting text"
 msgstr "Textul tău de întâmpinare"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1698
+#: usr/share/fish-tweak-tool/ftt_gui.py:1662
 msgid "ASCII art:"
 msgstr "Artă ASCII:"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1705
+#: usr/share/fish-tweak-tool/ftt_gui.py:1669
 msgid "(none)"
 msgstr "(nimic)"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1713
+#: usr/share/fish-tweak-tool/ftt_gui.py:1677
 msgid "Rainbow colour"
 msgstr "Culoare curcubeu"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1720
+#: usr/share/fish-tweak-tool/ftt_gui.py:1684
 msgid ""
 "Renders the custom text as ASCII art. If the tool isn't installed, Apply "
 "offers to install it."
@@ -648,33 +623,33 @@ msgstr ""
 "Redă textul personalizat ca artă ASCII. Dacă instrumentul nu este instalat, "
 "butonul „Aplică setările” oferă instalarea lui."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1724
+#: usr/share/fish-tweak-tool/ftt_gui.py:1688
 msgid "then show fastfetch below the text"
 msgstr "apoi afișează fastfetch sub text"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1764
+#: usr/share/fish-tweak-tool/ftt_gui.py:1728
 #, python-brace-format
 msgid "Could not open Fastfetch Tweak Tool: {error}"
 msgstr "Fastfetch Tweak Tool nu a putut fi deschis: {error}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1772
+#: usr/share/fish-tweak-tool/ftt_gui.py:1736
 msgid "Back up now"
 msgstr "Fă o copie de siguranță acum"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1781
+#: usr/share/fish-tweak-tool/ftt_gui.py:1745
 msgid "Restore selected"
 msgstr "Restaurează selecția"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1789
+#: usr/share/fish-tweak-tool/ftt_gui.py:1753
 msgid "(no backups yet)"
 msgstr "(încă nu există copii de siguranță)"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1833
+#: usr/share/fish-tweak-tool/ftt_gui.py:1797
 #, python-brace-format
 msgid "Install {packages}?"
 msgstr "Instalezi {packages}?"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1836
+#: usr/share/fish-tweak-tool/ftt_gui.py:1800
 #, python-brace-format
 msgid ""
 "{packages} is not installed, so the greeting can't render fully. Install "
@@ -692,122 +667,122 @@ msgstr[2] ""
 "{packages} nu sunt instalate, așa că mesajul de întâmpinare nu poate fi "
 "afișat complet. Instalezi cu pacman? (Ți se va cere parola într-un terminal.)"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1843
+#: usr/share/fish-tweak-tool/ftt_gui.py:1807
 msgid "Install"
 msgstr "Instalează"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1855
+#: usr/share/fish-tweak-tool/ftt_gui.py:1819
 msgid "Greeting not applied — install the package or change the tool."
 msgstr ""
 "Mesajul de întâmpinare nu a fost aplicat: instalează pachetul sau schimbă "
 "instrumentul."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1857
+#: usr/share/fish-tweak-tool/ftt_gui.py:1821
 #, python-brace-format
 msgid "Installing {packages}…"
 msgstr "Se instalează {packages}…"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1870
+#: usr/share/fish-tweak-tool/ftt_gui.py:1834
 #, python-brace-format
 msgid "Still not found: {packages}."
 msgstr "Nu a fost găsit nici acum: {packages}."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1873
+#: usr/share/fish-tweak-tool/ftt_gui.py:1837
 #, python-brace-format
 msgid "Could not install: {detail}"
 msgstr "Nu s-a putut instala: {detail}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1882
+#: usr/share/fish-tweak-tool/ftt_gui.py:1846
 msgid "Applying settings…"
 msgstr "Se aplică setările…"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1894
+#: usr/share/fish-tweak-tool/ftt_gui.py:1858
 msgid "Settings applied. Open a new shell to see them."
 msgstr "Setările au fost aplicate. Deschide un shell nou pentru a le vedea."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1896
+#: usr/share/fish-tweak-tool/ftt_gui.py:1860
 #, python-brace-format
 msgid "Could not apply settings: {detail}"
 msgstr "Setările nu au putut fi aplicate: {detail}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1909
+#: usr/share/fish-tweak-tool/ftt_gui.py:1873
 #, python-brace-format
 msgid "Backed up to {path}."
 msgstr "Copie de siguranță creată în {path}."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1911
+#: usr/share/fish-tweak-tool/ftt_gui.py:1875
 msgid "Nothing to back up (no fish config found)."
 msgstr "Nu există nimic de salvat (nu a fost găsită configurația fish)."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1916
+#: usr/share/fish-tweak-tool/ftt_gui.py:1880
 msgid "No backup to restore."
 msgstr "Nu există copii de siguranță de restaurat."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1919
+#: usr/share/fish-tweak-tool/ftt_gui.py:1883
 #, python-brace-format
 msgid "Restoring {path}…"
 msgstr "Se restaurează {path}…"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1926
+#: usr/share/fish-tweak-tool/ftt_gui.py:1890
 #, python-brace-format
 msgid "Restored {path}. Open a new shell."
 msgstr "{path} a fost restaurat. Deschide un shell nou."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1929
+#: usr/share/fish-tweak-tool/ftt_gui.py:1893
 #, python-brace-format
 msgid "Restore failed: {error}"
 msgstr "Restaurarea a eșuat: {error}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1944
-#: usr/share/fish-tweak-tool/ftt_gui.py:2086
+#: usr/share/fish-tweak-tool/ftt_gui.py:1908
+#: usr/share/fish-tweak-tool/ftt_gui.py:2050
 msgid "none"
 msgstr "niciuna"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1944
+#: usr/share/fish-tweak-tool/ftt_gui.py:1908
 msgid "system default"
 msgstr "valoarea implicită a sistemului"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1945
+#: usr/share/fish-tweak-tool/ftt_gui.py:1909
 msgid "custom"
 msgstr "personalizat"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1950
+#: usr/share/fish-tweak-tool/ftt_gui.py:1914
 msgid "Theme"
 msgstr "Temă"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1951
+#: usr/share/fish-tweak-tool/ftt_gui.py:1915
 msgid "Palette"
 msgstr "Paletă"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1952
+#: usr/share/fish-tweak-tool/ftt_gui.py:1916
 #: usr/share/fish-tweak-tool/ftt_gui.py:2568
 msgid "Plugins"
 msgstr "Pluginuri"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1954
+#: usr/share/fish-tweak-tool/ftt_gui.py:1918
 #: usr/share/fish-tweak-tool/ftt_gui.py:2572
 msgid "Abbreviations"
 msgstr "Abrevieri"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1962
+#: usr/share/fish-tweak-tool/ftt_gui.py:1926
 msgid "Starship"
 msgstr "Starship"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1964
+#: usr/share/fish-tweak-tool/ftt_gui.py:1928
 #, python-brace-format
 msgid "Built-in: {name}"
 msgstr "Integrat: {name}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1967
+#: usr/share/fish-tweak-tool/ftt_gui.py:1931
 msgid "Default"
 msgstr "Implicită"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2013
+#: usr/share/fish-tweak-tool/ftt_gui.py:1977
 #: usr/share/fish-tweak-tool/ftt_gui.py:2567
 msgid "Presets"
 msgstr "Presetări"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2016
+#: usr/share/fish-tweak-tool/ftt_gui.py:1980
 msgid ""
 "One click sets a whole look — prompt, plugins, theme and greeting together. "
 "Your fish config is backed up first."
@@ -815,15 +790,15 @@ msgstr ""
 "Un singur clic configurează un aspect complet: promptul, pluginurile, tema "
 "și mesajul de întâmpinare. Configurația fish este salvată mai întâi."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2045
+#: usr/share/fish-tweak-tool/ftt_gui.py:2009
 msgid "Current setup"
 msgstr "Configurația curentă"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2088
+#: usr/share/fish-tweak-tool/ftt_gui.py:2052
 msgid "unchanged"
 msgstr "neschimbat"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2090
+#: usr/share/fish-tweak-tool/ftt_gui.py:2054
 #, python-brace-format
 msgid "{count} custom abbreviation"
 msgid_plural "{count} custom abbreviations"
@@ -831,30 +806,30 @@ msgstr[0] "{count} abreviere personalizată"
 msgstr[1] "{count} abrevieri personalizate"
 msgstr[2] "{count} de abrevieri personalizate"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2092
+#: usr/share/fish-tweak-tool/ftt_gui.py:2056
 msgid " · git set on"
 msgstr " · setul git activat"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2096
+#: usr/share/fish-tweak-tool/ftt_gui.py:2060
 msgid "Custom setup"
 msgstr "Configurație personalizată"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2096
+#: usr/share/fish-tweak-tool/ftt_gui.py:2060
 #, python-brace-format
 msgid "✓ matches {name}"
 msgstr "✓ se potrivește cu {name}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2116
-#: usr/share/fish-tweak-tool/ftt_gui.py:2134
+#: usr/share/fish-tweak-tool/ftt_gui.py:2080
+#: usr/share/fish-tweak-tool/ftt_gui.py:2098
 msgid "Apply"
 msgstr "Aplică"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2129
+#: usr/share/fish-tweak-tool/ftt_gui.py:2093
 #, python-brace-format
 msgid "Apply the {name} preset?"
 msgstr "Aplici presetarea {name}?"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2131
+#: usr/share/fish-tweak-tool/ftt_gui.py:2095
 #, python-brace-format
 msgid ""
 "{summary}.\n"
@@ -867,23 +842,23 @@ msgstr ""
 "Aceasta instalează pluginurile și setează promptul, tema și mesajul de "
 "întâmpinare. Configurația fish este salvată mai întâi."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2147
+#: usr/share/fish-tweak-tool/ftt_gui.py:2111
 #, python-brace-format
 msgid "Applying the {name} preset…"
 msgstr "Se aplică presetarea {name}…"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2159
+#: usr/share/fish-tweak-tool/ftt_gui.py:2123
 #, python-brace-format
 msgid "{name} preset applied. Open a new shell to see it."
 msgstr ""
 "Presetarea {name} a fost aplicată. Deschide un shell nou pentru a o vedea."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2162
+#: usr/share/fish-tweak-tool/ftt_gui.py:2126
 #, python-brace-format
 msgid "{name} preset failed: {detail}"
 msgstr "Presetarea {name} a eșuat: {detail}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2186
+#: usr/share/fish-tweak-tool/ftt_gui.py:2150
 msgid ""
 "Already defined elsewhere (e.g. a plugin) — your version overrides it in new "
 "shells."
@@ -891,23 +866,23 @@ msgstr ""
 "Este deja definită în altă parte (de exemplu, într-un plugin): versiunea ta "
 "o suprascrie în shell-urile noi."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2227
+#: usr/share/fish-tweak-tool/ftt_gui.py:2191
 msgid "name"
 msgstr "nume"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2233
+#: usr/share/fish-tweak-tool/ftt_gui.py:2197
 msgid "expands to…"
 msgstr "se extinde la…"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2238
+#: usr/share/fish-tweak-tool/ftt_gui.py:2202
 msgid "Remove"
 msgstr "Elimină"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2285
+#: usr/share/fish-tweak-tool/ftt_gui.py:2249
 msgid "Git abbreviations"
 msgstr "Abrevieri git"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2288
+#: usr/share/fish-tweak-tool/ftt_gui.py:2252
 msgid ""
 "Install a curated set of git abbreviations (oh-my-zsh style) — gst → git "
 "status, gco → git checkout, and ~100 more — via fisher."
@@ -915,11 +890,11 @@ msgstr ""
 "Instalează prin fisher un set selectat de abrevieri git (stil oh-my-zsh): "
 "gst → git status, gco → git checkout și încă aproximativ 100."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2297
+#: usr/share/fish-tweak-tool/ftt_gui.py:2261
 msgid "oh-my-zsh-style git abbreviations (gst, gco, gp, …)"
 msgstr "Abrevieri git în stil oh-my-zsh (gst, gco, gp, …)"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2303
+#: usr/share/fish-tweak-tool/ftt_gui.py:2267
 msgid ""
 "fisher is not available — install it (sudo pacman -S fisher) to add the git "
 "set."
@@ -927,11 +902,11 @@ msgstr ""
 "fisher nu este disponibil: instalează-l (sudo pacman -S fisher) pentru a "
 "adăuga setul git."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2308
+#: usr/share/fish-tweak-tool/ftt_gui.py:2272
 msgid "Your abbreviations"
 msgstr "Abrevierile tale"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2311
+#: usr/share/fish-tweak-tool/ftt_gui.py:2275
 msgid ""
 "Add your own. Abbreviations expand inline as you type — e.g. 'k' → "
 "'kubectl'. Names cannot contain spaces. Apply, then open a new shell to use "
@@ -941,19 +916,19 @@ msgstr ""
 "exemplu: 'k' → 'kubectl'. Numele nu pot conține spații. Apasă „Aplică "
 "abrevierile”, apoi deschide un shell nou pentru a le folosi."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2325
+#: usr/share/fish-tweak-tool/ftt_gui.py:2289
 msgid "Add abbreviation"
 msgstr "Adaugă o abreviere"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2327
+#: usr/share/fish-tweak-tool/ftt_gui.py:2291
 msgid "Apply abbreviations"
 msgstr "Aplică abrevierile"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2351
+#: usr/share/fish-tweak-tool/ftt_gui.py:2315
 msgid "Most-used git abbreviations"
 msgstr "Cele mai folosite abrevieri git"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2353
+#: usr/share/fish-tweak-tool/ftt_gui.py:2317
 msgid ""
 "A sample of what the toggle above installs — plugin-git ships ~100. They "
 "expand inline as you type, just like your own."
@@ -962,31 +937,31 @@ msgstr ""
 "aproximativ 100 de abrevieri. Se extind în linie în timp ce tastezi, la fel "
 "ca abrevierile proprii."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2421
+#: usr/share/fish-tweak-tool/ftt_gui.py:2385
 #, python-brace-format
 msgid "'{value}': both a name and an expansion are required."
 msgstr "„{value}”: sunt necesare atât un nume, cât și o valoare de extindere."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2425
+#: usr/share/fish-tweak-tool/ftt_gui.py:2389
 #, python-brace-format
 msgid "'{name}': abbreviation names cannot contain spaces."
 msgstr "„{name}”: numele abrevierilor nu pot conține spații."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2427
+#: usr/share/fish-tweak-tool/ftt_gui.py:2391
 #, python-brace-format
 msgid "'{name}': names cannot contain quotes or backslashes."
 msgstr "„{name}”: numele nu pot conține ghilimele sau bare oblice inverse."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2429
+#: usr/share/fish-tweak-tool/ftt_gui.py:2393
 #, python-brace-format
 msgid "'{name}' is listed twice — names must be unique."
 msgstr "„{name}” este listat de două ori: numele trebuie să fie unice."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2445
+#: usr/share/fish-tweak-tool/ftt_gui.py:2409
 msgid "Applying abbreviations…"
 msgstr "Se aplică abrevierile…"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2461
+#: usr/share/fish-tweak-tool/ftt_gui.py:2425
 #, python-brace-format
 msgid "{count} abbreviation applied. Open a new shell to use it."
 msgid_plural "{count} abbreviations applied. Open a new shell to use them."
@@ -998,41 +973,58 @@ msgstr[2] ""
 "Au fost aplicate {count} de abrevieri. Deschide un shell nou pentru a le "
 "folosi."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2468
+#: usr/share/fish-tweak-tool/ftt_gui.py:2432
 #, python-brace-format
 msgid "Could not apply: {detail}"
 msgstr "Nu s-a putut aplica: {detail}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2478
+#: usr/share/fish-tweak-tool/ftt_gui.py:2442
 msgid "best value — almost all goes to the project"
 msgstr "cea mai bună alegere: aproape totul ajunge la proiect"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2479
+#: usr/share/fish-tweak-tool/ftt_gui.py:2443
 msgid "buy a coffee — one-off tip"
 msgstr "lasă un bacșiș: o singură dată"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2480
+#: usr/share/fish-tweak-tool/ftt_gui.py:2444
 msgid "membership tiers + perks"
 msgstr "niveluri de abonament cu beneficii"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2481
+#: usr/share/fish-tweak-tool/ftt_gui.py:2445
 msgid "YouTube membership"
 msgstr "Abonament de membru YouTube"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2481
+#: usr/share/fish-tweak-tool/ftt_gui.py:2445
 msgid "join on YouTube"
 msgstr "devino membru pe YouTube"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2482
+#: usr/share/fish-tweak-tool/ftt_gui.py:2446
 msgid "direct one-off"
 msgstr "donație directă, o singură dată"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2491
+#: usr/share/fish-tweak-tool/ftt_gui.py:2457
+#, python-brace-format
+msgid "System ({language})"
+msgstr "Sistem ({language})"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2460
+msgid "Language"
+msgstr "Limbă"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2465
+msgid "Restart now"
+msgstr "Repornește acum"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2472
+msgid "Saved. The app shows the new language when it starts again."
+msgstr "Salvat. Aplicația va afișa noua limbă la următoarea pornire."
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2487
 #, python-brace-format
 msgid "Support {product}"
 msgstr "Susține {product}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2507
+#: usr/share/fish-tweak-tool/ftt_gui.py:2503
 #, python-brace-format
 msgid ""
 "Our tools are built by one person, for the community — and kept free. If "
@@ -1043,19 +1035,19 @@ msgstr ""
 "comunitate și rămân gratuite. Dacă {product} îți economisește timp, un mic "
 "sprijin ajută la continuarea muncii. Îți mulțumim că ești aici."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2526
+#: usr/share/fish-tweak-tool/ftt_gui.py:2522
 msgid "Close"
 msgstr "Închide"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2551
+#: usr/share/fish-tweak-tool/ftt_gui.py:2547
 msgid "♥ Support"
 msgstr "♥ Susține"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2552
+#: usr/share/fish-tweak-tool/ftt_gui.py:2548
 msgid "Support Kiro's development"
 msgstr "Susține dezvoltarea Kiro"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2555
+#: usr/share/fish-tweak-tool/ftt_gui.py:2551
 msgid "Quit"
 msgstr "Ieșire"
 
@@ -1113,3 +1105,10 @@ msgstr ""
 #: po/fish-tweak-tool.desktop.in:10
 msgid "fish;shell;prompt;theme;plugin;fisher;tide;tweak"
 msgstr "fish;shell;prompt;theme;plugin;fisher;tide;tweak;shell;prompt;temă;plugin;ajustare;"
+
+#~ msgid ""
+#~ "The app follows your system language. Pick another one to use that one "
+#~ "instead."
+#~ msgstr ""
+#~ "Aplicația folosește limba sistemului. Alege altă limbă dacă vrei să o "
+#~ "folosești în locul ei."

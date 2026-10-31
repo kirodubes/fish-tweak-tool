@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: fish-tweak-tool\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-31 15:27+0100\n"
+"POT-Creation-Date: 2026-10-31 15:44+0100\n"
 "PO-Revision-Date: 2026-10-31 15:16+0100\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: German\n"
@@ -203,8 +203,8 @@ msgstr "{plugin} entfernt."
 #: usr/share/fish-tweak-tool/ftt_gui.py:998
 #: usr/share/fish-tweak-tool/ftt_gui.py:1263
 #: usr/share/fish-tweak-tool/ftt_gui.py:1458
-#: usr/share/fish-tweak-tool/ftt_gui.py:2161
-#: usr/share/fish-tweak-tool/ftt_gui.py:2467
+#: usr/share/fish-tweak-tool/ftt_gui.py:2125
+#: usr/share/fish-tweak-tool/ftt_gui.py:2431
 msgid "see terminal for details"
 msgstr "Weitere Details findest du im Terminal."
 
@@ -230,7 +230,7 @@ msgstr ""
 "Vor der ersten Änderung wird deine fish-Konfiguration gesichert."
 
 #: usr/share/fish-tweak-tool/ftt_gui.py:553
-#: usr/share/fish-tweak-tool/ftt_gui.py:1949
+#: usr/share/fish-tweak-tool/ftt_gui.py:1913
 #: usr/share/fish-tweak-tool/ftt_gui.py:2569
 msgid "Prompt"
 msgstr "Prompt"
@@ -346,7 +346,7 @@ msgstr ""
 
 #: usr/share/fish-tweak-tool/ftt_gui.py:815
 #: usr/share/fish-tweak-tool/ftt_gui.py:966
-#: usr/share/fish-tweak-tool/ftt_gui.py:1872
+#: usr/share/fish-tweak-tool/ftt_gui.py:1836
 msgid "see terminal"
 msgstr "siehe Terminal"
 
@@ -385,8 +385,8 @@ msgstr ""
 "installieren? (Du gibst dein Passwort in einem Terminal ein.)"
 
 #: usr/share/fish-tweak-tool/ftt_gui.py:937
-#: usr/share/fish-tweak-tool/ftt_gui.py:1843
-#: usr/share/fish-tweak-tool/ftt_gui.py:2134
+#: usr/share/fish-tweak-tool/ftt_gui.py:1807
+#: usr/share/fish-tweak-tool/ftt_gui.py:2098
 msgid "Cancel"
 msgstr "Abbrechen"
 
@@ -559,7 +559,7 @@ msgid "None"
 msgstr "Keine"
 
 #: usr/share/fish-tweak-tool/ftt_gui.py:1601
-#: usr/share/fish-tweak-tool/ftt_gui.py:1953
+#: usr/share/fish-tweak-tool/ftt_gui.py:1917
 msgid "Greeting"
 msgstr "Begrüßung"
 
@@ -583,64 +583,39 @@ msgstr "Einstellungen anwenden"
 msgid "Backup & restore"
 msgstr "Sichern und wiederherstellen"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1639
-msgid "Language"
-msgstr "Sprache"
-
-#: usr/share/fish-tweak-tool/ftt_gui.py:1640
-msgid ""
-"The app follows your system language. Pick another one to use that one "
-"instead."
-msgstr ""
-"Die App folgt der Sprache deines Systems. Wähle eine andere, um stattdessen "
-"diese zu verwenden."
-
 #: usr/share/fish-tweak-tool/ftt_gui.py:1642
-#, python-brace-format
-msgid "System ({language})"
-msgstr "System ({language})"
-
-#: usr/share/fish-tweak-tool/ftt_gui.py:1649
-msgid "Restart now"
-msgstr "Jetzt neu starten"
-
-#: usr/share/fish-tweak-tool/ftt_gui.py:1662
-msgid "Saved. The app shows the new language when it starts again."
-msgstr "Gespeichert. Die App zeigt die neue Sprache beim nächsten Start."
-
-#: usr/share/fish-tweak-tool/ftt_gui.py:1678
 msgid "System default"
 msgstr "Systemstandard"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1679
+#: usr/share/fish-tweak-tool/ftt_gui.py:1643
 msgid "No greeting"
 msgstr "Keine Begrüßung"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1680
+#: usr/share/fish-tweak-tool/ftt_gui.py:1644
 msgid "Show fastfetch on launch"
 msgstr "fastfetch beim Start anzeigen"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1681
+#: usr/share/fish-tweak-tool/ftt_gui.py:1645
 msgid "Custom text"
 msgstr "Eigener Text"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1693
+#: usr/share/fish-tweak-tool/ftt_gui.py:1657
 msgid "Your greeting text"
 msgstr "Dein Begrüßungstext"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1698
+#: usr/share/fish-tweak-tool/ftt_gui.py:1662
 msgid "ASCII art:"
 msgstr "ASCII-Grafik:"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1705
+#: usr/share/fish-tweak-tool/ftt_gui.py:1669
 msgid "(none)"
 msgstr "(keine)"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1713
+#: usr/share/fish-tweak-tool/ftt_gui.py:1677
 msgid "Rainbow colour"
 msgstr "Regenbogenfarbe"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1720
+#: usr/share/fish-tweak-tool/ftt_gui.py:1684
 msgid ""
 "Renders the custom text as ASCII art. If the tool isn't installed, Apply "
 "offers to install it."
@@ -648,33 +623,33 @@ msgstr ""
 "Der eigene Text wird als ASCII-Grafik dargestellt. Wenn das Tool nicht "
 "installiert ist, kannst du es über Anwenden installieren lassen."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1724
+#: usr/share/fish-tweak-tool/ftt_gui.py:1688
 msgid "then show fastfetch below the text"
 msgstr "danach fastfetch unter dem Text anzeigen"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1764
+#: usr/share/fish-tweak-tool/ftt_gui.py:1728
 #, python-brace-format
 msgid "Could not open Fastfetch Tweak Tool: {error}"
 msgstr "Fastfetch Tweak Tool konnte nicht geöffnet werden: {error}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1772
+#: usr/share/fish-tweak-tool/ftt_gui.py:1736
 msgid "Back up now"
 msgstr "Jetzt sichern"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1781
+#: usr/share/fish-tweak-tool/ftt_gui.py:1745
 msgid "Restore selected"
 msgstr "Ausgewähltes wiederherstellen"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1789
+#: usr/share/fish-tweak-tool/ftt_gui.py:1753
 msgid "(no backups yet)"
 msgstr "(noch keine Sicherungen)"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1833
+#: usr/share/fish-tweak-tool/ftt_gui.py:1797
 #, python-brace-format
 msgid "Install {packages}?"
 msgstr "{packages} installieren?"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1836
+#: usr/share/fish-tweak-tool/ftt_gui.py:1800
 #, python-brace-format
 msgid ""
 "{packages} is not installed, so the greeting can't render fully. Install "
@@ -691,121 +666,121 @@ msgstr[1] ""
 "vollständig angezeigt werden. Mit pacman installieren? (Du gibst dein "
 "Passwort in einem Terminal ein.)"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1843
+#: usr/share/fish-tweak-tool/ftt_gui.py:1807
 msgid "Install"
 msgstr "Installieren"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1855
+#: usr/share/fish-tweak-tool/ftt_gui.py:1819
 msgid "Greeting not applied — install the package or change the tool."
 msgstr ""
 "Begrüßung nicht angewendet. Installiere das Paket oder ändere das Tool."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1857
+#: usr/share/fish-tweak-tool/ftt_gui.py:1821
 #, python-brace-format
 msgid "Installing {packages}…"
 msgstr "{packages} werden installiert…"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1870
+#: usr/share/fish-tweak-tool/ftt_gui.py:1834
 #, python-brace-format
 msgid "Still not found: {packages}."
 msgstr "Immer noch nicht gefunden: {packages}."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1873
+#: usr/share/fish-tweak-tool/ftt_gui.py:1837
 #, python-brace-format
 msgid "Could not install: {detail}"
 msgstr "Installation fehlgeschlagen: {detail}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1882
+#: usr/share/fish-tweak-tool/ftt_gui.py:1846
 msgid "Applying settings…"
 msgstr "Einstellungen werden angewendet…"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1894
+#: usr/share/fish-tweak-tool/ftt_gui.py:1858
 msgid "Settings applied. Open a new shell to see them."
 msgstr "Einstellungen angewendet. Öffne eine neue Shell, um sie zu sehen."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1896
+#: usr/share/fish-tweak-tool/ftt_gui.py:1860
 #, python-brace-format
 msgid "Could not apply settings: {detail}"
 msgstr "Einstellungen konnten nicht angewendet werden: {detail}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1909
+#: usr/share/fish-tweak-tool/ftt_gui.py:1873
 #, python-brace-format
 msgid "Backed up to {path}."
 msgstr "Gesichert unter {path}."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1911
+#: usr/share/fish-tweak-tool/ftt_gui.py:1875
 msgid "Nothing to back up (no fish config found)."
 msgstr "Nichts zu sichern (keine fish-Konfiguration gefunden)."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1916
+#: usr/share/fish-tweak-tool/ftt_gui.py:1880
 msgid "No backup to restore."
 msgstr "Keine Sicherung zum Wiederherstellen."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1919
+#: usr/share/fish-tweak-tool/ftt_gui.py:1883
 #, python-brace-format
 msgid "Restoring {path}…"
 msgstr "{path} wird wiederhergestellt…"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1926
+#: usr/share/fish-tweak-tool/ftt_gui.py:1890
 #, python-brace-format
 msgid "Restored {path}. Open a new shell."
 msgstr "{path} wiederhergestellt. Öffne eine neue Shell."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1929
+#: usr/share/fish-tweak-tool/ftt_gui.py:1893
 #, python-brace-format
 msgid "Restore failed: {error}"
 msgstr "Wiederherstellung fehlgeschlagen: {error}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1944
-#: usr/share/fish-tweak-tool/ftt_gui.py:2086
+#: usr/share/fish-tweak-tool/ftt_gui.py:1908
+#: usr/share/fish-tweak-tool/ftt_gui.py:2050
 msgid "none"
 msgstr "keins"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1944
+#: usr/share/fish-tweak-tool/ftt_gui.py:1908
 msgid "system default"
 msgstr "Systemstandard"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1945
+#: usr/share/fish-tweak-tool/ftt_gui.py:1909
 msgid "custom"
 msgstr "benutzerdefiniert"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1950
+#: usr/share/fish-tweak-tool/ftt_gui.py:1914
 msgid "Theme"
 msgstr "Theme"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1951
+#: usr/share/fish-tweak-tool/ftt_gui.py:1915
 msgid "Palette"
 msgstr "Palette"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1952
+#: usr/share/fish-tweak-tool/ftt_gui.py:1916
 #: usr/share/fish-tweak-tool/ftt_gui.py:2568
 msgid "Plugins"
 msgstr "Plugins"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1954
+#: usr/share/fish-tweak-tool/ftt_gui.py:1918
 #: usr/share/fish-tweak-tool/ftt_gui.py:2572
 msgid "Abbreviations"
 msgstr "Abkürzungen"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1962
+#: usr/share/fish-tweak-tool/ftt_gui.py:1926
 msgid "Starship"
 msgstr "Starship"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1964
+#: usr/share/fish-tweak-tool/ftt_gui.py:1928
 #, python-brace-format
 msgid "Built-in: {name}"
 msgstr "Integriert: {name}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:1967
+#: usr/share/fish-tweak-tool/ftt_gui.py:1931
 msgid "Default"
 msgstr "Standard"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2013
+#: usr/share/fish-tweak-tool/ftt_gui.py:1977
 #: usr/share/fish-tweak-tool/ftt_gui.py:2567
 msgid "Presets"
 msgstr "Vorlagen"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2016
+#: usr/share/fish-tweak-tool/ftt_gui.py:1980
 msgid ""
 "One click sets a whole look — prompt, plugins, theme and greeting together. "
 "Your fish config is backed up first."
@@ -813,45 +788,45 @@ msgstr ""
 "Ein Klick richtet alles ein: Prompt, Plugins, Theme und Begrüßung. Zuerst "
 "wird deine fish-Konfiguration gesichert."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2045
+#: usr/share/fish-tweak-tool/ftt_gui.py:2009
 msgid "Current setup"
 msgstr "Aktuelle Einrichtung"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2088
+#: usr/share/fish-tweak-tool/ftt_gui.py:2052
 msgid "unchanged"
 msgstr "unverändert"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2090
+#: usr/share/fish-tweak-tool/ftt_gui.py:2054
 #, python-brace-format
 msgid "{count} custom abbreviation"
 msgid_plural "{count} custom abbreviations"
 msgstr[0] "{count} eigene Abkürzung"
 msgstr[1] "{count} eigene Abkürzungen"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2092
+#: usr/share/fish-tweak-tool/ftt_gui.py:2056
 msgid " · git set on"
 msgstr " · Git-Sammlung aktiviert"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2096
+#: usr/share/fish-tweak-tool/ftt_gui.py:2060
 msgid "Custom setup"
 msgstr "Eigene Einrichtung"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2096
+#: usr/share/fish-tweak-tool/ftt_gui.py:2060
 #, python-brace-format
 msgid "✓ matches {name}"
 msgstr "✓ entspricht {name}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2116
-#: usr/share/fish-tweak-tool/ftt_gui.py:2134
+#: usr/share/fish-tweak-tool/ftt_gui.py:2080
+#: usr/share/fish-tweak-tool/ftt_gui.py:2098
 msgid "Apply"
 msgstr "Anwenden"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2129
+#: usr/share/fish-tweak-tool/ftt_gui.py:2093
 #, python-brace-format
 msgid "Apply the {name} preset?"
 msgstr "Preset {name} anwenden?"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2131
+#: usr/share/fish-tweak-tool/ftt_gui.py:2095
 #, python-brace-format
 msgid ""
 "{summary}.\n"
@@ -864,23 +839,23 @@ msgstr ""
 "Dabei werden Plugins installiert und dein Prompt, Theme und deine Begrüßung "
 "eingerichtet. Zuerst wird deine fish-Konfiguration gesichert."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2147
+#: usr/share/fish-tweak-tool/ftt_gui.py:2111
 #, python-brace-format
 msgid "Applying the {name} preset…"
 msgstr "Preset {name} wird angewendet…"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2159
+#: usr/share/fish-tweak-tool/ftt_gui.py:2123
 #, python-brace-format
 msgid "{name} preset applied. Open a new shell to see it."
 msgstr ""
 "Preset {name} angewendet. Öffne eine neue Shell, um die Änderungen zu sehen."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2162
+#: usr/share/fish-tweak-tool/ftt_gui.py:2126
 #, python-brace-format
 msgid "{name} preset failed: {detail}"
 msgstr "Preset {name} ist fehlgeschlagen: {detail}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2186
+#: usr/share/fish-tweak-tool/ftt_gui.py:2150
 msgid ""
 "Already defined elsewhere (e.g. a plugin) — your version overrides it in new "
 "shells."
@@ -888,23 +863,23 @@ msgstr ""
 "Bereits anderweitig definiert (z. B. durch ein Plugin); deine Version hat in "
 "neuen Shells Vorrang."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2227
+#: usr/share/fish-tweak-tool/ftt_gui.py:2191
 msgid "name"
 msgstr "Name"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2233
+#: usr/share/fish-tweak-tool/ftt_gui.py:2197
 msgid "expands to…"
 msgstr "wird erweitert zu…"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2238
+#: usr/share/fish-tweak-tool/ftt_gui.py:2202
 msgid "Remove"
 msgstr "Entfernen"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2285
+#: usr/share/fish-tweak-tool/ftt_gui.py:2249
 msgid "Git abbreviations"
 msgstr "Git-Abkürzungen"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2288
+#: usr/share/fish-tweak-tool/ftt_gui.py:2252
 msgid ""
 "Install a curated set of git abbreviations (oh-my-zsh style) — gst → git "
 "status, gco → git checkout, and ~100 more — via fisher."
@@ -913,11 +888,11 @@ msgstr ""
 "Stil von oh-my-zsh, zum Beispiel gst → git status, gco → git checkout und "
 "rund 100 weitere."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2297
+#: usr/share/fish-tweak-tool/ftt_gui.py:2261
 msgid "oh-my-zsh-style git abbreviations (gst, gco, gp, …)"
 msgstr "Git-Abkürzungen im oh-my-zsh-Stil (gst, gco, gp, …)"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2303
+#: usr/share/fish-tweak-tool/ftt_gui.py:2267
 msgid ""
 "fisher is not available — install it (sudo pacman -S fisher) to add the git "
 "set."
@@ -925,11 +900,11 @@ msgstr ""
 "fisher ist nicht verfügbar. Installiere es (sudo pacman -S fisher), um die "
 "Git-Sammlung hinzuzufügen."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2308
+#: usr/share/fish-tweak-tool/ftt_gui.py:2272
 msgid "Your abbreviations"
 msgstr "Deine Abkürzungen"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2311
+#: usr/share/fish-tweak-tool/ftt_gui.py:2275
 msgid ""
 "Add your own. Abbreviations expand inline as you type — e.g. 'k' → "
 "'kubectl'. Names cannot contain spaces. Apply, then open a new shell to use "
@@ -940,19 +915,19 @@ msgstr ""
 "enthalten. Klicke auf Anwenden und öffne dann eine neue Shell, um sie zu "
 "verwenden."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2325
+#: usr/share/fish-tweak-tool/ftt_gui.py:2289
 msgid "Add abbreviation"
 msgstr "Abkürzung hinzufügen"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2327
+#: usr/share/fish-tweak-tool/ftt_gui.py:2291
 msgid "Apply abbreviations"
 msgstr "Abkürzungen anwenden"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2351
+#: usr/share/fish-tweak-tool/ftt_gui.py:2315
 msgid "Most-used git abbreviations"
 msgstr "Häufig verwendete Git-Abkürzungen"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2353
+#: usr/share/fish-tweak-tool/ftt_gui.py:2317
 msgid ""
 "A sample of what the toggle above installs — plugin-git ships ~100. They "
 "expand inline as you type, just like your own."
@@ -960,33 +935,33 @@ msgstr ""
 "Eine Auswahl der Abkürzungen, die der Schalter oben installiert: plugin-git "
 "enthält rund 100. Sie werden wie deine eigenen beim Tippen inline erweitert."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2421
+#: usr/share/fish-tweak-tool/ftt_gui.py:2385
 #, python-brace-format
 msgid "'{value}': both a name and an expansion are required."
 msgstr ""
 "{value}: Du musst sowohl einen Namen als auch eine Erweiterung angeben."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2425
+#: usr/share/fish-tweak-tool/ftt_gui.py:2389
 #, python-brace-format
 msgid "'{name}': abbreviation names cannot contain spaces."
 msgstr "{name}: Abkürzungsnamen dürfen keine Leerzeichen enthalten."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2427
+#: usr/share/fish-tweak-tool/ftt_gui.py:2391
 #, python-brace-format
 msgid "'{name}': names cannot contain quotes or backslashes."
 msgstr ""
 "{name}: Namen dürfen keine Anführungszeichen oder Backslashes enthalten."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2429
+#: usr/share/fish-tweak-tool/ftt_gui.py:2393
 #, python-brace-format
 msgid "'{name}' is listed twice — names must be unique."
 msgstr "{name} ist doppelt aufgeführt. Namen müssen eindeutig sein."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2445
+#: usr/share/fish-tweak-tool/ftt_gui.py:2409
 msgid "Applying abbreviations…"
 msgstr "Abkürzungen werden angewendet…"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2461
+#: usr/share/fish-tweak-tool/ftt_gui.py:2425
 #, python-brace-format
 msgid "{count} abbreviation applied. Open a new shell to use it."
 msgid_plural "{count} abbreviations applied. Open a new shell to use them."
@@ -995,41 +970,58 @@ msgstr[0] ""
 msgstr[1] ""
 "{count} Abkürzungen angewendet. Öffne eine neue Shell, um sie zu verwenden."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2468
+#: usr/share/fish-tweak-tool/ftt_gui.py:2432
 #, python-brace-format
 msgid "Could not apply: {detail}"
 msgstr "Anwenden fehlgeschlagen: {detail}"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2478
+#: usr/share/fish-tweak-tool/ftt_gui.py:2442
 msgid "best value — almost all goes to the project"
 msgstr "beste Wahl: fast alles geht an das Projekt"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2479
+#: usr/share/fish-tweak-tool/ftt_gui.py:2443
 msgid "buy a coffee — one-off tip"
 msgstr "spendiere einen Kaffee: ein einmaliges Trinkgeld"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2480
+#: usr/share/fish-tweak-tool/ftt_gui.py:2444
 msgid "membership tiers + perks"
 msgstr "Mitgliedsstufen mit Extras"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2481
+#: usr/share/fish-tweak-tool/ftt_gui.py:2445
 msgid "YouTube membership"
 msgstr "YouTube-Mitgliedschaft"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2481
+#: usr/share/fish-tweak-tool/ftt_gui.py:2445
 msgid "join on YouTube"
 msgstr "werde Mitglied auf YouTube"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2482
+#: usr/share/fish-tweak-tool/ftt_gui.py:2446
 msgid "direct one-off"
 msgstr "direkt, einmalig"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2491
+#: usr/share/fish-tweak-tool/ftt_gui.py:2457
+#, python-brace-format
+msgid "System ({language})"
+msgstr "System ({language})"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2460
+msgid "Language"
+msgstr "Sprache"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2465
+msgid "Restart now"
+msgstr "Jetzt neu starten"
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2472
+msgid "Saved. The app shows the new language when it starts again."
+msgstr "Gespeichert. Die App zeigt die neue Sprache beim nächsten Start."
+
+#: usr/share/fish-tweak-tool/ftt_gui.py:2487
 #, python-brace-format
 msgid "Support {product}"
 msgstr "{product} unterstützen"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2507
+#: usr/share/fish-tweak-tool/ftt_gui.py:2503
 #, python-brace-format
 msgid ""
 "Our tools are built by one person, for the community — and kept free. If "
@@ -1040,19 +1032,19 @@ msgstr ""
 "bleiben kostenlos. Wenn {product} dir Zeit spart, hilft eine kleine "
 "Unterstützung dabei, die Arbeit fortzusetzen. Danke, dass du dabei bist."
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2526
+#: usr/share/fish-tweak-tool/ftt_gui.py:2522
 msgid "Close"
 msgstr "Schließen"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2551
+#: usr/share/fish-tweak-tool/ftt_gui.py:2547
 msgid "♥ Support"
 msgstr "♥ Unterstützen"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2552
+#: usr/share/fish-tweak-tool/ftt_gui.py:2548
 msgid "Support Kiro's development"
 msgstr "Die Entwicklung von Kiro unterstützen"
 
-#: usr/share/fish-tweak-tool/ftt_gui.py:2555
+#: usr/share/fish-tweak-tool/ftt_gui.py:2551
 msgid "Quit"
 msgstr "Beenden"
 
@@ -1108,3 +1100,10 @@ msgstr "Konfiguriere die fish-Shell: Prompt, Plugins, Themes und Begrüßung"
 #: po/fish-tweak-tool.desktop.in:10
 msgid "fish;shell;prompt;theme;plugin;fisher;tide;tweak"
 msgstr "fish;shell;prompt;theme;plugin;fisher;tide;tweak;Terminal;Shell;Eingabeaufforderung;Thema;Plugins;Konfiguration;anpassen;"
+
+#~ msgid ""
+#~ "The app follows your system language. Pick another one to use that one "
+#~ "instead."
+#~ msgstr ""
+#~ "Die App folgt der Sprache deines Systems. Wähle eine andere, um "
+#~ "stattdessen diese zu verwenden."

@@ -8,7 +8,8 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
 - **Fish Tweak Tool speaks 13 languages**: Dutch, German, Spanish, French, Portuguese (Brazil), Russian, Hungarian,
   Italian, Turkish, Polish, Japanese, Chinese (simplified) and Romanian, besides English. It follows the system
   language (Portugal reads Brazilian Portuguese, Taiwan/Hong Kong simplified Chinese).
-- **Language section with a dropdown** and **Restart now** to pick another language. The menu entry is translated too.
+- **Language dropdown in the header, top right** (next to Support and Quit, as in Alacritty Tweak Tool), with
+  **Restart now** to pick another language. The menu entry is translated too.
 
 ### Technical Details
 - New `ftt_i18n.py`, the shared Kiro i18n module (domain `fish-tweak-tool`, catalogs in `usr/share/locale`, choice in
@@ -22,7 +23,7 @@ All notable changes to Fish Tweak Tool are documented here. Newest first.
   automatic fixes. German and Russian windows checked off-screen.
 
 ### Files Modified
-- `usr/share/fish-tweak-tool/ftt_i18n.py` (new), `ftt_gui.py` (language section), `ftt_presets.py`, `ftt_fisher.py`,
+- `usr/share/fish-tweak-tool/ftt_i18n.py` (new), `ftt_gui.py` (header language dropdown), `ftt_presets.py`, `ftt_fisher.py`,
   `fish-tweak-tool.py`
 - `po/` (new), `usr/share/locale/*/LC_MESSAGES/fish-tweak-tool.mo` (new),
   `usr/share/applications/fish-tweak-tool.desktop` (now generated), `.codespellrc` (new)

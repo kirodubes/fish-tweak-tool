@@ -55,7 +55,7 @@ shipped defaults without the two layers ever fighting.
 
 Fish Tweak Tool follows your system language: English, Dutch, German, Spanish, French, Portuguese (Brazil),
 Russian, Hungarian, Italian, Turkish, Polish, Japanese, Chinese (simplified) and Romanian. Pick another one in the
-**Language** section and press **Restart now**.
+language dropdown at the top right and press **Restart now**.
 
 ## Installation
 

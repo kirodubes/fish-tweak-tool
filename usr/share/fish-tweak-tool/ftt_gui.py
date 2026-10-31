@@ -1624,8 +1624,6 @@ class SettingsTab(_StatusMixin):
         box.append(_section(_("Backup & restore")))
         box.append(self._build_backup())
 
-        box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
-        box.append(self._language_box())
         box.append(self._init_status())
 
         scroller = Gtk.ScrolledWindow()
@@ -1633,40 +1631,6 @@ class SettingsTab(_StatusMixin):
         scroller.set_vexpand(True)
         scroller.set_child(box)
         return scroller
-
-    def _language_box(self):
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        box.append(_section(_("Language")))
-        box.append(_intro(_("The app follows your system language. Pick another one to use that one instead.")))
-        self._codes = [None, *ftt_i18n.available()]
-        labels = [_("System ({language})").format(language=ftt_i18n.name(ftt_i18n.SYSTEM))]
-        labels.extend(ftt_i18n.name(code) for code in self._codes[1:])
-        dropdown = Gtk.DropDown.new_from_strings(labels)
-        dropdown.set_halign(Gtk.Align.START)
-        dropdown.set_selected(self._codes.index(ftt_i18n.chosen()))
-        dropdown.connect("notify::selected", self._on_language)
-        self._language_note = Gtk.Label(xalign=0, wrap=True)
-        self._btn_restart = Gtk.Button(label=_("Restart now"))
-        self._btn_restart.set_halign(Gtk.Align.START)
-        self._btn_restart.set_visible(False)
-        self._btn_restart.connect("clicked", self._on_restart)
-        for widget in (dropdown, self._language_note, self._btn_restart):
-            box.append(widget)
-        return box
-
-    def _on_language(self, dropdown, _pspec):
-        code = self._codes[dropdown.get_selected()]
-        ftt_i18n.save_choice(code)
-        changed = (code or ftt_i18n.SYSTEM) != (ftt_i18n.ACTIVE or ftt_i18n.SYSTEM)
-        self._language_note.set_text(
-            _("Saved. The app shows the new language when it starts again.") if changed else ""
-        )
-        self._btn_restart.set_visible(changed)
-
-    def _on_restart(self, _widget):
-        argv = [sys.executable, os.path.abspath(sys.argv[0]), *sys.argv[1:]]
-        ftt_i18n.restore_environment()
-        os.execv(sys.executable, argv)
 
     def _build_greeting(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
@@ -2487,6 +2451,38 @@ def _open_url(parent, url):
     Gtk.UriLauncher.new(url).launch(parent, None, None)
 
 
+def _language_controls():
+    """Build the header-row language dropdown, its Restart now button and the saved note."""
+    codes = [None, *ftt_i18n.available()]
+    labels = [_("System ({language})").format(language=ftt_i18n.name(ftt_i18n.SYSTEM))]
+    labels.extend(ftt_i18n.name(code) for code in codes[1:])
+    dropdown = Gtk.DropDown.new_from_strings(labels)
+    dropdown.set_tooltip_text(_("Language"))
+    dropdown.set_valign(Gtk.Align.CENTER)
+    dropdown.set_selected(codes.index(ftt_i18n.chosen()))
+    note = Gtk.Label(xalign=1, wrap=True, visible=False)
+    note.set_margin_end(12)
+    restart = Gtk.Button(label=_("Restart now"), visible=False)
+    restart.set_valign(Gtk.Align.CENTER)
+
+    def on_language_changed(_dropdown, _pspec):
+        code = codes[dropdown.get_selected()]
+        ftt_i18n.save_choice(code)
+        changed = (code or ftt_i18n.SYSTEM) != (ftt_i18n.ACTIVE or ftt_i18n.SYSTEM)
+        note.set_text(_("Saved. The app shows the new language when it starts again.") if changed else "")
+        note.set_visible(changed)
+        restart.set_visible(changed)
+
+    def on_restart(_widget):
+        argv = [sys.executable, os.path.abspath(sys.argv[0]), *sys.argv[1:]]
+        ftt_i18n.restore_environment()
+        os.execv(sys.executable, argv)
+
+    dropdown.connect("notify::selected", on_language_changed)
+    restart.connect("clicked", on_restart)
+    return dropdown, note, restart
+
+
 def _show_support_dialog(window):
     support_title = _("Support {product}").format(product="Kiro")
     dlg = Gtk.Window(title=support_title, transient_for=window, modal=True)
@@ -2554,11 +2550,15 @@ def build(window, fish_version):
     btn_support.connect("clicked", lambda _w: _show_support_dialog(window))
     btn_quit = Gtk.Button(label=_("Quit"))
     btn_quit.connect("clicked", lambda _w: window.close())
+    language_dropdown, language_note, btn_restart = _language_controls()
     header.append(title)
     header.append(lbl_version)
+    header.append(language_dropdown)
+    header.append(btn_restart)
     header.append(btn_support)
     header.append(btn_quit)
     root.append(header)
+    root.append(language_note)
     root.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
 
     notebook = Gtk.Notebook()
